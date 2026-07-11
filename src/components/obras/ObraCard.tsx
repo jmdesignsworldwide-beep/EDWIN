@@ -4,7 +4,7 @@ import { MapPin, User2, CalendarClock } from "lucide-react";
 import { MagneticCard, ProgressBar } from "@/components/primitives";
 import { EstadoBadge } from "./EstadoBadge";
 import { formatCurrency } from "@/lib/utils";
-import type { Proyecto } from "@/lib/proyectos/types";
+import { clienteNombre, type Proyecto } from "@/lib/proyectos/types";
 
 /**
  * ObraCard — tarjeta de obra en el grid. Clickable (abre el detalle). Muestra
@@ -17,15 +17,11 @@ export function ObraCard({
   proyecto: Proyecto;
   onClick: () => void;
 }) {
-  const {
-    nombre,
-    ubicacion,
-    cliente,
-    estado,
-    avance,
-    presupuesto,
-    fecha_fin_estimada,
-  } = proyecto;
+  const { nombre, ubicacion, estado, avance, presupuesto, fecha_fin_estimada, etapas } =
+    proyecto;
+  const cliente = clienteNombre(proyecto);
+  const total = etapas?.length ?? 0;
+  const done = etapas?.filter((e) => e.completada).length ?? 0;
 
   return (
     <MagneticCard className="cursor-pointer p-5" intensity={4}>
@@ -67,7 +63,9 @@ export function ObraCard({
 
         <div className="mt-4">
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-content-muted">Avance</span>
+            <span className="text-xs font-medium text-content-muted">
+              {total > 0 ? `${done}/${total} etapas` : "Avance"}
+            </span>
             <span className="text-xs font-semibold tabular-nums text-content">
               {avance}%
             </span>

@@ -17,7 +17,7 @@ import { ObraCard } from "@/components/obras/ObraCard";
 import { ObraForm } from "@/components/obras/ObraForm";
 import { ObraDetail } from "@/components/obras/ObraDetail";
 import { deleteProyecto } from "./actions";
-import type { Proyecto } from "@/lib/proyectos/types";
+import type { Cliente, Proyecto } from "@/lib/proyectos/types";
 
 type PanelState =
   | { type: "closed" }
@@ -27,10 +27,12 @@ type PanelState =
 
 export function ObrasView({
   proyectos,
+  clientes,
   configured,
   loadError,
 }: {
   proyectos: Proyecto[];
+  clientes: Cliente[];
   configured: boolean;
   loadError?: string;
 }) {
@@ -131,7 +133,7 @@ export function ObrasView({
         title="Nueva obra"
         subtitle="Registra una obra de la constructora"
       >
-        <ObraForm onSaved={refreshAndClose} onCancel={close} />
+        <ObraForm clientes={clientes} onSaved={refreshAndClose} onCancel={close} />
       </Modal>
 
       {/* Modal editar (centrado) */}
@@ -144,6 +146,7 @@ export function ObrasView({
         {panel.type === "edit" && (
           <ObraForm
             proyecto={panel.proyecto}
+            clientes={clientes}
             onSaved={refreshAndClose}
             onCancel={close}
           />

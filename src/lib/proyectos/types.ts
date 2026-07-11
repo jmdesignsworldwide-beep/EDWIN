@@ -9,33 +9,108 @@ export type EstadoObra =
   | "pausada"
   | "terminada";
 
-export type Proyecto = {
+export type Cliente = {
   id: string;
   nombre: string;
-  ubicacion: string | null;
-  cliente: string | null;
-  estado: EstadoObra;
-  fecha_inicio: string | null;
-  fecha_fin_estimada: string | null;
-  avance: number;
-  presupuesto: number | null;
-  notas: string | null;
+  telefono: string | null;
+  cedula_rnc: string | null;
   created_at: string;
   updated_at: string;
 };
 
-/** Datos que captura el formulario (crear/editar). */
-export type ProyectoInput = {
+/** Datos cortos del quick-add de cliente. */
+export type ClienteInput = {
+  nombre: string;
+  telefono: string | null;
+  cedula_rnc: string | null;
+};
+
+export type Etapa = {
+  id: string;
+  obra_id: string;
+  nombre: string;
+  completada: boolean;
+  orden: number;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  porcentaje: number | null;
+};
+
+/** Etapa en edición dentro del formulario (id ausente = nueva). */
+export type EtapaDraft = {
+  id?: string;
+  nombre: string;
+  completada: boolean;
+  orden: number;
+};
+
+export type Proyecto = {
+  id: string;
   nombre: string;
   ubicacion: string | null;
+  /** Texto legado (obras anteriores); se prefiere `cliente_rel`. */
   cliente: string | null;
+  cliente_id: string | null;
+  cliente_rel: Pick<Cliente, "id" | "nombre" | "telefono" | "cedula_rnc"> | null;
   estado: EstadoObra;
   fecha_inicio: string | null;
   fecha_fin_estimada: string | null;
+  /** Calculado a partir de las etapas (completadas ÷ total). */
   avance: number;
   presupuesto: number | null;
   notas: string | null;
+  etapas: Etapa[];
+  created_at: string;
+  updated_at: string;
 };
+
+/** Datos que captura el formulario de obra (el avance se calcula de etapas). */
+export type ProyectoInput = {
+  nombre: string;
+  ubicacion: string | null;
+  cliente_id: string | null;
+  estado: EstadoObra;
+  fecha_inicio: string | null;
+  fecha_fin_estimada: string | null;
+  presupuesto: number | null;
+  notas: string | null;
+};
+
+/** Nombre visible del cliente de una obra (rel o texto legado). */
+export function clienteNombre(p: Proyecto): string | null {
+  return p.cliente_rel?.nombre ?? p.cliente ?? null;
+}
+
+/** Avance calculado desde etapas: completadas ÷ total × 100. */
+export function calcularAvance(
+  etapas: { completada: boolean }[],
+): number {
+  if (etapas.length === 0) return 0;
+  const done = etapas.filter((e) => e.completada).length;
+  return Math.round((done / etapas.length) * 100);
+}
+
+/** Valida y normaliza cédula (000-0000000-0) o RNC (9 díg.) dominicano. */
+export function normalizarCedulaRnc(
+  raw: string,
+): { ok: true; value: string | null } | { ok: false; error: string } {
+  const s = raw.trim();
+  if (s === "") return { ok: true, value: null };
+  const digits = s.replace(/\D/g, "");
+  if (digits.length === 11) {
+    return {
+      ok: true,
+      value: `${digits.slice(0, 3)}-${digits.slice(3, 10)}-${digits.slice(10)}`,
+    };
+  }
+  if (digits.length === 9) {
+    return { ok: true, value: digits };
+  }
+  return {
+    ok: false,
+    error: "Cédula (11 dígitos) o RNC (9 dígitos) inválido.",
+  };
+}
 
 export const ESTADOS: { value: EstadoObra; label: string }[] = [
   { value: "planificacion", label: "Planificación" },
