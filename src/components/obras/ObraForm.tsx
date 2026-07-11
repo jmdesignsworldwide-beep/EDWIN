@@ -74,8 +74,9 @@ export function ObraForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
-      <div className="flex-1 space-y-4">
+    <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+      {/* Campos: scrollean dentro del modal; el footer queda fijo abajo. */}
+      <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
         <Field label="Nombre de la obra" required>
           <input
             type="text"
@@ -205,7 +206,7 @@ export function ObraForm({
         )}
       </div>
 
-      <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-line pt-4">
+      <div className="flex shrink-0 items-center justify-end gap-2.5 border-t border-line px-5 py-4">
         <Button type="button" variant="secondary" size="md" onClick={onCancel} disabled={pending}>
           Cancelar
         </Button>

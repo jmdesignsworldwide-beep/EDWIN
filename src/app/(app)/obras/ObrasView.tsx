@@ -11,6 +11,7 @@ import {
   EmptyState,
 } from "@/components/primitives";
 import { SlideOver } from "@/components/ui/SlideOver";
+import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ObraCard } from "@/components/obras/ObraCard";
 import { ObraForm } from "@/components/obras/ObraForm";
@@ -123,18 +124,18 @@ export function ObrasView({
         </Reveal>
       )}
 
-      {/* Panel crear */}
-      <SlideOver
+      {/* Modal crear (centrado) */}
+      <Modal
         open={panel.type === "create"}
         onClose={close}
         title="Nueva obra"
         subtitle="Registra una obra de la constructora"
       >
         <ObraForm onSaved={refreshAndClose} onCancel={close} />
-      </SlideOver>
+      </Modal>
 
-      {/* Panel editar */}
-      <SlideOver
+      {/* Modal editar (centrado) */}
+      <Modal
         open={panel.type === "edit"}
         onClose={close}
         title="Editar obra"
@@ -147,7 +148,7 @@ export function ObrasView({
             onCancel={close}
           />
         )}
-      </SlideOver>
+      </Modal>
 
       {/* Panel detalle */}
       <SlideOver
