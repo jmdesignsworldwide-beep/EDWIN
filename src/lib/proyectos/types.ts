@@ -25,23 +25,82 @@ export type ClienteInput = {
   cedula_rnc: string | null;
 };
 
+export type EstadoEtapa = "pendiente" | "en_curso" | "completada" | "retrasada";
+
 export type Etapa = {
   id: string;
   obra_id: string;
   nombre: string;
+  estado: EstadoEtapa;
   completada: boolean;
   orden: number;
   fecha_inicio: string | null;
   fecha_fin: string | null;
   porcentaje: number | null;
+  notas: string | null;
 };
 
-/** Etapa en edición dentro del formulario (id ausente = nueva). */
-export type EtapaDraft = {
-  id?: string;
+/** Datos que captura el formulario de etapa. */
+export type EtapaInput = {
   nombre: string;
-  completada: boolean;
-  orden: number;
+  estado: EstadoEtapa;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  porcentaje: number;
+  notas: string | null;
+};
+
+export const ESTADOS_ETAPA: { value: EstadoEtapa; label: string }[] = [
+  { value: "pendiente", label: "Pendiente" },
+  { value: "en_curso", label: "En curso" },
+  { value: "completada", label: "Completada" },
+  { value: "retrasada", label: "Retrasada" },
+];
+
+export const ESTADO_ETAPA_LABEL: Record<EstadoEtapa, string> = {
+  pendiente: "Pendiente",
+  en_curso: "En curso",
+  completada: "Completada",
+  retrasada: "Retrasada",
+};
+
+/**
+ * Badge por estado de etapa. Contraste verificado en ambos temas
+ * (texto -700 en claro / -300 en oscuro). Se usa también para el color de la
+ * barra del Gantt (ver ETAPA_BAR).
+ */
+export const ESTADO_ETAPA_BADGE: Record<
+  EstadoEtapa,
+  { badge: string; dot: string }
+> = {
+  pendiente: {
+    badge:
+      "bg-slate-500/12 text-slate-700 dark:text-slate-300 ring-1 ring-inset ring-slate-500/25",
+    dot: "bg-slate-500",
+  },
+  en_curso: {
+    badge:
+      "bg-sky-500/12 text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/25",
+    dot: "bg-sky-500",
+  },
+  completada: {
+    badge:
+      "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/25",
+    dot: "bg-emerald-500",
+  },
+  retrasada: {
+    badge:
+      "bg-rose-500/12 text-rose-700 dark:text-rose-300 ring-1 ring-inset ring-rose-500/25",
+    dot: "bg-rose-500",
+  },
+};
+
+/** Color de relleno de la barra del Gantt por estado (legible en ambos temas). */
+export const ETAPA_BAR: Record<EstadoEtapa, string> = {
+  pendiente: "bg-slate-400 dark:bg-slate-500",
+  en_curso: "bg-sky-500",
+  completada: "bg-emerald-500",
+  retrasada: "bg-rose-500",
 };
 
 export type Proyecto = {
@@ -81,13 +140,20 @@ export function clienteNombre(p: Proyecto): string | null {
   return p.cliente_rel?.nombre ?? p.cliente ?? null;
 }
 
-/** Avance calculado desde etapas: completadas ÷ total × 100. */
+/** Avance de la obra: promedio del % de avance de sus etapas. */
 export function calcularAvance(
-  etapas: { completada: boolean }[],
+  etapas: { porcentaje: number | null }[],
 ): number {
   if (etapas.length === 0) return 0;
-  const done = etapas.filter((e) => e.completada).length;
-  return Math.round((done / etapas.length) * 100);
+  const suma = etapas.reduce((acc, e) => acc + (e.porcentaje ?? 0), 0);
+  return Math.round(suma / etapas.length);
+}
+
+/** Cuántas etapas están completadas. */
+export function etapasCompletadas(
+  etapas: { estado: EstadoEtapa }[],
+): number {
+  return etapas.filter((e) => e.estado === "completada").length;
 }
 
 /** Valida y normaliza cédula (000-0000000-0) o RNC (9 díg.) dominicano. */

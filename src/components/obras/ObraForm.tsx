@@ -7,20 +7,18 @@ import {
   ESTADOS,
   UBICACIONES_RD,
   type Cliente,
-  type EtapaDraft,
   type Proyecto,
   type ProyectoInput,
   type EstadoObra,
 } from "@/lib/proyectos/types";
 import { createProyecto, updateProyecto } from "@/app/(app)/obras/actions";
-import { EtapasManager } from "./EtapasManager";
 import { ClienteSelect } from "./ClienteSelect";
 import { cn } from "@/lib/utils";
 
 /**
- * ObraForm — crear/editar una obra. El avance se lleva por etapas (calculado),
- * y el cliente es un cliente registrado (selector + quick-add). Al guardar
- * persiste obra + etapas + cliente_id en Supabase y notifica para refrescar.
+ * ObraForm — crear/editar una obra (datos de la obra). El cliente es un cliente
+ * registrado (selector + quick-add). Las etapas y el avance se gestionan en el
+ * cronograma de la obra (/obras/[id]). Persiste en Supabase y refresca.
  */
 export function ObraForm({
   proyecto,
@@ -49,18 +47,6 @@ export function ObraForm({
     notas: proyecto?.notas ?? "",
   });
 
-  const [etapas, setEtapas] = useState<EtapaDraft[]>(
-    (proyecto?.etapas ?? [])
-      .slice()
-      .sort((a, b) => a.orden - b.orden)
-      .map((e) => ({
-        id: e.id,
-        nombre: e.nombre,
-        completada: e.completada,
-        orden: e.orden,
-      })),
-  );
-
   function set<K extends keyof ProyectoInput>(key: K, value: ProyectoInput[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
@@ -81,8 +67,8 @@ export function ObraForm({
             : form.presupuesto,
       };
       const res = isEdit
-        ? await updateProyecto(proyecto!.id, payload, etapas)
-        : await createProyecto(payload, etapas);
+        ? await updateProyecto(proyecto!.id, payload)
+        : await createProyecto(payload);
       if (res.ok) onSaved();
       else setError(res.error);
     });
@@ -162,11 +148,6 @@ export function ObraForm({
               className={inputCls}
             />
           </Field>
-        </div>
-
-        {/* Avance por etapas (reemplaza el slider) */}
-        <div className="rounded-xl border border-line bg-surface/40 p-3.5">
-          <EtapasManager etapas={etapas} onChange={setEtapas} />
         </div>
 
         <Field label="Presupuesto de la obra (RD$)">
