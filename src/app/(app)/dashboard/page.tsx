@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DashboardView } from "./DashboardView";
 
-export const metadata: Metadata = { title: "Panel" };
+export const metadata: Metadata = { title: "Sala de Mando" };
 
 export default function DashboardPage() {
   return <DashboardView />;

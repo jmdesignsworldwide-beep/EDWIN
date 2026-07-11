@@ -1,145 +1,260 @@
 "use client";
 
+import { useEffect, useState, type ReactNode } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   HardHat,
-  Users,
   Percent,
-  PackageCheck,
-  MapPin,
+  TrendingUp,
+  Bell,
+  Plus,
+  Building2,
+  Activity,
   CalendarClock,
+  ShieldCheck,
+  ArrowRight,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Reveal, Stagger, KPI, MagneticCard, ProgressBar } from "@/components/primitives";
+import { Panel } from "@/components/layout/Panel";
+import {
+  Reveal,
+  Stagger,
+  KPI,
+  Button,
+  EmptyState,
+  KPISkeleton,
+  ObraCardSkeleton,
+  RowSkeleton,
+} from "@/components/primitives";
+import { formatCurrency } from "@/lib/utils";
 
 /**
- * Panel — vitrina de los primitivos animados con datos de muestra.
- * NOTA: sin precios de contrato ni datos de pago (fuera del alcance del
- * sistema). Métricas puramente operativas de las obras.
- * Client component: usa iconos y primitivos animados directamente.
+ * Sala de Mando — primera pantalla tras el login. Arranca VACÍA (sistema real,
+ * Edwin mete sus obras). Foco: layout premium + empty states elegantes.
+ *
+ * El estado `loading` simula el fetch futuro para mostrar los skeletons y la
+ * transición con AnimatePresence; cuando se conecte Supabase, el mismo camino
+ * sirve los datos reales. NOTA: sin precios de contrato ni datos de pago.
  */
-
-const OBRAS = [
-  { nombre: "Residencial Los Cerros", lugar: "Santiago", avance: 78 },
-  { nombre: "Plaza Comercial Duarte", lugar: "Santiago", avance: 45 },
-  { nombre: "Torre Bella Vista", lugar: "Santiago", avance: 62 },
-  { nombre: "Villas del Jardín", lugar: "Moca", avance: 91 },
-  { nombre: "Nave Industrial Cibao", lugar: "Santiago", avance: 34 },
-];
-
-const ENTREGAS = [
-  { obra: "Villas del Jardín", fecha: "15 jul", estado: "Esta semana" },
-  { obra: "Residencial Los Cerros", fecha: "28 jul", estado: "Este mes" },
-  { obra: "Torre Bella Vista", fecha: "09 ago", estado: "Próximo mes" },
-];
-
 export function DashboardView() {
+  const reduced = useReducedMotion();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (reduced) {
+      setLoading(false);
+      return;
+    }
+    const t = setTimeout(() => setLoading(false), 750);
+    return () => clearTimeout(t);
+  }, [reduced]);
+
   return (
     <>
       <PageHeader
-        title="Panel"
-        subtitle="Resumen operativo de las obras · Constructora Edwin"
+        title="Sala de Mando"
+        subtitle="Tu constructora de un vistazo · Santiago, RD"
+        action={
+          <Button href="/obras" icon={Plus} size="md">
+            Agregar obra
+          </Button>
+        }
       />
 
-      {/* KPIs */}
-      <Stagger className="grid grid-cols-1 gap-4 xs:grid-cols-2 xl:grid-cols-4">
-        <Reveal>
-          <KPI label="Obras activas" value={8} icon={HardHat} trend={2} />
-        </Reveal>
-        <Reveal>
-          <KPI
-            label="Avance promedio"
-            value={62}
-            suffix="%"
-            icon={Percent}
-            trend={5}
-            progress={62}
-            tone="accent"
-          />
-        </Reveal>
-        <Reveal>
-          <KPI label="Personal en campo" value={47} icon={Users} trend={-3} />
-        </Reveal>
-        <Reveal>
-          <KPI
-            label="Materiales por recibir"
-            value={12}
-            icon={PackageCheck}
-            trend={0}
-            tone="accent"
-          />
-        </Reveal>
-      </Stagger>
+      {/* ── Fila de KPIs ── */}
+      <Swap
+        loading={loading}
+        skeleton={
+          <div className="grid grid-cols-1 gap-4 xs:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <KPISkeleton key={i} />
+            ))}
+          </div>
+        }
+      >
+        <Stagger className="grid grid-cols-1 gap-4 xs:grid-cols-2 xl:grid-cols-4">
+          <Reveal>
+            <KPI
+              label="Obras activas"
+              value={0}
+              icon={HardHat}
+              empty
+              hint="Sin registrar"
+              href="/obras"
+            />
+          </Reveal>
+          <Reveal>
+            <KPI
+              label="Inversión del mes"
+              value={0}
+              icon={TrendingUp}
+              format={(n) => formatCurrency(n)}
+              empty
+              hint="Aún sin movimientos"
+              href="/reportes"
+              tone="accent"
+            />
+          </Reveal>
+          <Reveal>
+            <KPI
+              label="Avance promedio"
+              value={0}
+              icon={Percent}
+              suffix="%"
+              empty
+              hint="Sin obras aún"
+              href="/obras"
+            />
+          </Reveal>
+          <Reveal>
+            <KPI
+              label="Alertas"
+              value={0}
+              icon={Bell}
+              empty
+              hint="Todo en orden"
+              href="/notificaciones"
+              tone="accent"
+            />
+          </Reveal>
+        </Stagger>
+      </Swap>
 
-      {/* Obras + Entregas */}
+      {/* ── Paneles ── */}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Reveal standalone className="lg:col-span-2">
-          <MagneticCard className="h-full p-5" intensity={2}>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-content">
-                Avance de obras
-              </h2>
-              <span className="text-xs font-medium text-content-subtle">
-                {OBRAS.length} en curso
-              </span>
-            </div>
-            <Stagger className="space-y-4">
-              {OBRAS.map((obra) => (
-                <Reveal key={obra.nombre}>
-                  <div>
-                    <div className="mb-1.5 flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-content">
-                          {obra.nombre}
-                        </p>
-                        <p className="flex items-center gap-1 text-xs text-content-subtle">
-                          <MapPin className="h-3 w-3" />
-                          {obra.lugar}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-sm font-semibold tabular-nums text-content">
-                        {obra.avance}%
-                      </span>
-                    </div>
-                    <ProgressBar
-                      value={obra.avance}
-                      tone={obra.avance >= 85 ? "success" : "brand"}
-                      size="sm"
-                    />
-                  </div>
-                </Reveal>
-              ))}
-            </Stagger>
-          </MagneticCard>
+        {/* Obras en curso — grande, izquierda */}
+        <Reveal standalone className="lg:col-span-2 lg:row-span-2">
+          <Panel
+            title="Obras en curso"
+            icon={Building2}
+            className="h-full"
+            action={
+              <Button href="/obras" variant="ghost" size="sm" iconRight={ArrowRight}>
+                Ver todas
+              </Button>
+            }
+          >
+            <Swap
+              loading={loading}
+              className="flex-1"
+              skeleton={
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <ObraCardSkeleton key={i} />
+                  ))}
+                </div>
+              }
+            >
+              <div className="grid flex-1 place-items-center">
+                <EmptyState
+                  icon={HardHat}
+                  title="Aún no hay obras registradas"
+                  description="Cuando agregues tu primera obra, aparecerá aquí con su avance, ubicación y equipo. Empieza registrando una."
+                  actionLabel="Agregar obra"
+                  actionHref="/obras"
+                  actionIcon={Plus}
+                />
+              </div>
+            </Swap>
+          </Panel>
         </Reveal>
 
-        <Reveal standalone delay={0.1}>
-          <MagneticCard className="h-full p-5" intensity={2}>
-            <div className="mb-4 flex items-center gap-2">
-              <CalendarClock className="h-4 w-4 text-brand" />
-              <h2 className="text-base font-semibold text-content">
-                Próximas entregas
-              </h2>
-            </div>
-            <Stagger className="space-y-3">
-              {ENTREGAS.map((e) => (
-                <Reveal key={e.obra}>
-                  <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-2/50 p-3">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand/12 text-xs font-bold text-brand">
-                      {e.fecha.split(" ")[0]}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-content">
-                        {e.obra}
-                      </p>
-                      <p className="text-xs text-content-subtle">{e.estado}</p>
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
-            </Stagger>
-          </MagneticCard>
+        {/* Alertas / vencimientos — derecha arriba */}
+        <Reveal standalone delay={0.08}>
+          <Panel title="Alertas y vencimientos" icon={CalendarClock} className="h-full">
+            <Swap
+              loading={loading}
+              className="flex-1"
+              skeleton={
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <RowSkeleton key={i} />
+                  ))}
+                </div>
+              }
+            >
+              <div className="grid flex-1 place-items-center">
+                <EmptyState
+                  icon={ShieldCheck}
+                  title="Todo en orden"
+                  description="No hay alertas ni vencimientos próximos. Aquí verás pagos a proveedores, entregas y permisos por vencer."
+                  size="sm"
+                  tone="accent"
+                />
+              </div>
+            </Swap>
+          </Panel>
+        </Reveal>
+
+        {/* Actividad reciente — derecha abajo */}
+        <Reveal standalone delay={0.14}>
+          <Panel title="Actividad reciente" icon={Activity} className="h-full">
+            <Swap
+              loading={loading}
+              className="flex-1"
+              skeleton={
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <RowSkeleton key={i} />
+                  ))}
+                </div>
+              }
+            >
+              <div className="grid flex-1 place-items-center">
+                <EmptyState
+                  icon={Activity}
+                  title="Sin movimientos todavía"
+                  description="Cada registro —avances, compras, asistencia— quedará aquí en orden cronológico."
+                  size="sm"
+                />
+              </div>
+            </Swap>
+          </Panel>
         </Reveal>
       </div>
     </>
+  );
+}
+
+/**
+ * Swap — crossfade entre skeleton (cargando) y contenido (listo) con
+ * AnimatePresence. Es el punto donde luego enchufamos los datos reales.
+ */
+function Swap({
+  loading,
+  skeleton,
+  children,
+  className,
+}: {
+  loading: boolean;
+  skeleton: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <AnimatePresence mode="wait" initial={false}>
+        {loading ? (
+          <motion.div
+            key="skeleton"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="h-full"
+          >
+            {skeleton}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="flex h-full flex-col"
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
