@@ -2,29 +2,33 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, GanttChartSquare, Package, AlertTriangle } from "lucide-react";
+import { ArrowLeft, GanttChartSquare, Package, AlertTriangle, Users } from "lucide-react";
 import { Reveal, ProgressBar, MagneticCard } from "@/components/primitives";
 import { EstadoBadge } from "@/components/obras/EstadoBadge";
 import { EtapasSection } from "./EtapasSection";
 import { MaterialesSection } from "./MaterialesSection";
+import { EquipoSection } from "./EquipoSection";
 import {
   clienteNombre,
   etapasCompletadas,
   materialesEnAlerta,
+  type Persona,
   type Proveedor,
   type Proyecto,
 } from "@/lib/proyectos/types";
 import { cn } from "@/lib/utils";
 
-type Tab = "cronograma" | "materiales";
+type Tab = "cronograma" | "materiales" | "equipo";
 
 export function ObraWorkspace({
   proyecto,
   proveedores,
+  personal,
   initialTab = "cronograma",
 }: {
   proyecto: Proyecto;
   proveedores: Proveedor[];
+  personal: Persona[];
   initialTab?: Tab;
 }) {
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -35,6 +39,7 @@ export function ObraWorkspace({
   const done = etapasCompletadas(etapas);
   const cliente = clienteNombre(proyecto);
   const alertas = materialesEnAlerta(materiales);
+  const nEquipo = (proyecto.equipo ?? []).length;
 
   return (
     <>
@@ -80,12 +85,17 @@ export function ObraWorkspace({
         <TabBtn active={tab === "materiales"} onClick={() => setTab("materiales")} icon={Package} badge={alertas}>
           Materiales
         </TabBtn>
+        <TabBtn active={tab === "equipo"} onClick={() => setTab("equipo")} icon={Users} count={nEquipo}>
+          Equipo
+        </TabBtn>
       </div>
 
       {tab === "cronograma" ? (
         <EtapasSection proyecto={proyecto} />
-      ) : (
+      ) : tab === "materiales" ? (
         <MaterialesSection proyecto={proyecto} proveedores={proveedores} />
+      ) : (
+        <EquipoSection proyecto={proyecto} personal={personal} />
       )}
     </>
   );
@@ -96,12 +106,14 @@ function TabBtn({
   onClick,
   icon: Icon,
   badge,
+  count,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   icon: typeof Package;
   badge?: number;
+  count?: number;
   children: React.ReactNode;
 }) {
   return (
@@ -124,6 +136,16 @@ function TabBtn({
         >
           <AlertTriangle className="h-2.5 w-2.5" />
           {badge}
+        </span>
+      )}
+      {count != null && count > 0 && (
+        <span
+          className={cn(
+            "inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+            active ? "bg-brand-ink/15 text-brand-ink" : "bg-surface-2 text-content-muted",
+          )}
+        >
+          {count}
         </span>
       )}
     </button>

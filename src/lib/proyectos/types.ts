@@ -131,6 +131,8 @@ export type Proyecto = {
   etapas: Etapa[];
   /** Presente en el detalle de la obra (getProyecto / listado). */
   materiales?: Material[];
+  /** Personal asignado a la obra (personal_obra). */
+  equipo?: AsignacionEnObra[];
   created_at: string;
   updated_at: string;
 };
@@ -217,6 +219,90 @@ export const CATEGORIAS_PROVEEDOR = [
   "Transporte",
   "Otros",
 ];
+
+export type JornalTipo = "dia" | "semana" | "hora";
+
+export type Persona = {
+  id: string;
+  nombre: string;
+  oficio: string | null;
+  telefono: string | null;
+  cedula: string | null;
+  jornal: number | null;
+  jornal_tipo: JornalTipo;
+  activo: boolean;
+  notas: string | null;
+  /** Asignaciones a obras (presente en el detalle). */
+  obras?: AsignacionDePersona[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type PersonaInput = {
+  nombre: string;
+  oficio: string | null;
+  telefono: string | null;
+  cedula: string | null;
+  jornal: number | null;
+  jornal_tipo: JornalTipo;
+  activo: boolean;
+  notas: string | null;
+};
+
+/** Fila de personal_obra vista desde la persona (con la obra embebida). */
+export type AsignacionDePersona = {
+  id: string;
+  obra_id: string;
+  rol_en_obra: string | null;
+  obra: { id: string; nombre: string; estado: EstadoObra } | null;
+};
+
+/** Fila de personal_obra vista desde la obra (con la persona embebida). */
+export type AsignacionEnObra = {
+  id: string;
+  rol_en_obra: string | null;
+  persona: {
+    id: string;
+    nombre: string;
+    oficio: string | null;
+    telefono: string | null;
+    activo: boolean;
+  } | null;
+};
+
+export const OFICIOS = [
+  "Maestro constructor",
+  "Capataz",
+  "Albañil",
+  "Ayudante",
+  "Plomero",
+  "Electricista",
+  "Operador",
+  "Armador",
+  "Pintor",
+  "Soldador",
+];
+
+export const JORNAL_TIPOS: { value: JornalTipo; label: string; corto: string }[] = [
+  { value: "dia", label: "Por día", corto: "día" },
+  { value: "semana", label: "Por semana", corto: "sem" },
+  { value: "hora", label: "Por hora", corto: "hora" },
+];
+
+export const JORNAL_TIPO_CORTO: Record<JornalTipo, string> = {
+  dia: "día",
+  semana: "sem",
+  hora: "hora",
+};
+
+/** Enlace de WhatsApp para un teléfono dominicano (+1). Null si no hay número. */
+export function whatsappLink(telefono: string | null): string | null {
+  if (!telefono) return null;
+  let digits = telefono.replace(/\D/g, "");
+  if (digits.length === 10) digits = "1" + digits; // 809/829/849 → +1
+  if (digits.length < 11) return null;
+  return `https://wa.me/${digits}`;
+}
 
 /** Total comprado a un proveedor (suma de montos de sus compras). */
 export function totalComprado(compras: Compra[]): number {
