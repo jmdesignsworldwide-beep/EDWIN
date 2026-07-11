@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { HardHat } from "lucide-react";
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
+import { listProyectos } from "./actions";
+import { ObrasView } from "./ObrasView";
 
 export const metadata: Metadata = { title: "Obras" };
 
-export default function ObrasPage() {
+// Datos en vivo desde Supabase (usa cookies + service_role): sin prerender.
+export const dynamic = "force-dynamic";
+
+export default async function ObrasPage() {
+  const { proyectos, configured, error } = await listProyectos();
   return (
-    <PlaceholderPage
-      title="Obras"
-      subtitle="Proyectos y obras en ejecución"
-      icon={HardHat}
-    />
+    <ObrasView proyectos={proyectos} configured={configured} loadError={error} />
   );
 }

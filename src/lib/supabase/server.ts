@@ -1,53 +1,49 @@
 import "server-only";
 
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
 /**
  * ============================================================
  *  SUPABASE — ACCESO SERVIDOR (service_role)
  * ============================================================
- * `import "server-only"` garantiza que este módulo JAMÁS se incluya en el
- * bundle del navegador: si algún componente cliente lo importa, el build falla.
+ * `import "server-only"` garantiza que este módulo JAMÁS llegue al bundle del
+ * navegador: si un componente cliente lo importa, el build falla.
  *
- * La `SUPABASE_SERVICE_ROLE_KEY` otorga acceso total (bypassa RLS). Solo debe
- * usarse aquí, en el servidor.
- *
- * TANDA 1: sin conexión real. Dejamos la estructura y la validación listas;
- * la creación del cliente se activa en una ola posterior (cuando se instale
- * `@supabase/supabase-js` y existan credenciales).
+ * La `SUPABASE_SERVICE_ROLE_KEY` bypassa RLS: se usa SOLO aquí, en el servidor,
+ * a través de server actions. El navegador (anon key) queda bloqueado por RLS.
  */
 
-type ServerEnv = {
-  url: string;
-  serviceRoleKey: string;
-};
+let cached: SupabaseClient | null = null;
 
-/** Lee y valida las variables secretas del servidor. */
-export function getServerSupabaseEnv(): ServerEnv {
+/** ¿Están configuradas las variables del servidor? (sin lanzar). */
+export function isSupabaseConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+  );
+}
+
+/**
+ * Cliente admin (service_role). No persiste sesión (uso servidor puro).
+ * Lanza si faltan variables — captúralo en las server actions para degradar
+ * con elegancia (estado "conecta Supabase") en vez de un 500.
+ */
+export function createAdminClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !serviceRoleKey) {
     throw new Error(
-      "Supabase (servidor) no está configurado. Define NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en .env.local.",
+      "Supabase (servidor) no configurado: define NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.",
     );
   }
 
-  return { url, serviceRoleKey };
-}
+  if (cached) return cached;
 
-/**
- * Placeholder del cliente admin. Se implementará cuando se conecte la base
- * de datos real:
- *
- *   import { createClient } from "@supabase/supabase-js";
- *   export function createAdminClient() {
- *     const { url, serviceRoleKey } = getServerSupabaseEnv();
- *     return createClient(url, serviceRoleKey, {
- *       auth: { persistSession: false, autoRefreshToken: false },
- *     });
- *   }
- */
-export function createAdminClient(): never {
-  throw new Error(
-    "Cliente admin de Supabase aún no habilitado (Tanda 1: sin base de datos real).",
-  );
+  cached = createClient(url, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { "x-application-name": "constructora-edwin" } },
+  });
+
+  return cached;
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { LogOut, X } from "lucide-react";
+import { logout } from "@/app/login/actions";
 import { NAV_GROUPS } from "@/lib/navigation";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
@@ -94,13 +95,15 @@ export function Sidebar({
       </nav>
 
       <div className="border-t border-line p-3">
-        <Link
-          href="/login"
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-content-muted transition-colors hover:bg-danger/10 hover:text-danger"
-        >
-          <LogOut className="h-[18px] w-[18px]" strokeWidth={2} />
-          Cerrar sesión
-        </Link>
+        <form action={logout}>
+          <button
+            type="submit"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-content-muted transition-colors hover:bg-danger/10 hover:text-danger"
+          >
+            <LogOut className="h-[18px] w-[18px]" strokeWidth={2} />
+            Cerrar sesión
+          </button>
+        </form>
       </div>
     </div>
   );
