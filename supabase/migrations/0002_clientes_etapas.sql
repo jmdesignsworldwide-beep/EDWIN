@@ -70,3 +70,6 @@ drop trigger if exists trg_etapas_updated_at on public.etapas;
 create trigger trg_etapas_updated_at
   before update on public.etapas
   for each row execute function public.set_updated_at();
+
+-- ── Hardening: search_path fijo en la función (Security Advisor limpio) ──
+alter function public.set_updated_at() set search_path = pg_catalog;
