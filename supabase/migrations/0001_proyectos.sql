@@ -42,8 +42,18 @@ create index if not exists proyectos_created_at_idx
 -- ── RLS: blindaje ──────────────────────────────────────────
 alter table public.proyectos enable row level security;
 alter table public.proyectos force  row level security;
--- (Intencionalmente sin CREATE POLICY: nadie con anon/authenticated key
---  puede leer ni escribir. El service_role bypassa RLS del lado servidor.)
+
+-- Deny-all explícito para los roles del navegador (anon/authenticated):
+-- defensa en profundidad y deja el Security Advisor sin notas. El
+-- service_role (server-only) bypassa RLS, así que las server actions siguen
+-- funcionando; nadie con la anon key puede leer ni escribir.
+drop policy if exists proyectos_deny_client_roles on public.proyectos;
+create policy proyectos_deny_client_roles
+  on public.proyectos
+  for all
+  to anon, authenticated
+  using (false)
+  with check (false);
 
 -- ── Mantener updated_at al día ─────────────────────────────
 create or replace function public.set_updated_at()
