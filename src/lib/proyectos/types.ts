@@ -119,8 +119,111 @@ export type Proyecto = {
   presupuesto: number | null;
   notas: string | null;
   etapas: Etapa[];
+  /** Presente en el detalle de la obra (getProyecto / listado). */
+  materiales?: Material[];
   created_at: string;
   updated_at: string;
+};
+
+export type Material = {
+  id: string;
+  obra_id: string;
+  etapa_id: string | null;
+  nombre: string;
+  unidad: string | null;
+  cantidad_comprada: number | null;
+  cantidad_usada: number | null;
+  costo_unitario: number | null;
+  notas: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MaterialInput = {
+  nombre: string;
+  etapa_id: string | null;
+  unidad: string | null;
+  cantidad_comprada: number | null;
+  cantidad_usada: number | null;
+  costo_unitario: number | null;
+  notas: string | null;
+};
+
+/** Unidades comunes de construcción (RD). */
+export const UNIDADES = [
+  "sacos",
+  "unidades",
+  "m³",
+  "galones",
+  "quintales",
+  "pies",
+  "libras",
+  "varillas",
+  "planchas",
+  "metros",
+  "rollos",
+  "cajas",
+];
+
+export type ExistenciaNivel = "ok" | "bajo" | "agotado" | null;
+
+/** Restante = comprada − usada (null si no se lleva cantidad comprada). */
+export function materialRestante(m: {
+  cantidad_comprada: number | null;
+  cantidad_usada: number | null;
+}): number | null {
+  if (m.cantidad_comprada == null) return null;
+  return m.cantidad_comprada - (m.cantidad_usada ?? 0);
+}
+
+/** Nivel de existencia con umbral simple (bajo ≤ 15% de lo comprado). */
+export function nivelExistencia(m: {
+  cantidad_comprada: number | null;
+  cantidad_usada: number | null;
+}): ExistenciaNivel {
+  const rest = materialRestante(m);
+  if (rest == null || !m.cantidad_comprada) return null;
+  if (rest <= 0) return "agotado";
+  if (rest <= m.cantidad_comprada * 0.15) return "bajo";
+  return "ok";
+}
+
+/** Subtotal del material = comprada × costo unitario (null si falta alguno). */
+export function materialSubtotal(m: {
+  cantidad_comprada: number | null;
+  costo_unitario: number | null;
+}): number | null {
+  if (m.cantidad_comprada == null || m.costo_unitario == null) return null;
+  return m.cantidad_comprada * m.costo_unitario;
+}
+
+/** Total de materiales de la obra (suma de subtotales disponibles). */
+export function totalMateriales(materiales: Material[]): number {
+  return materiales.reduce((acc, m) => acc + (materialSubtotal(m) ?? 0), 0);
+}
+
+/** Cuántos materiales tienen alerta de existencia (bajo o agotado). */
+export function materialesEnAlerta(materiales: Material[]): number {
+  return materiales.filter((m) => {
+    const n = nivelExistencia(m);
+    return n === "bajo" || n === "agotado";
+  }).length;
+}
+
+export const EXISTENCIA_BADGE: Record<
+  "bajo" | "agotado",
+  { badge: string; label: string }
+> = {
+  bajo: {
+    badge:
+      "bg-amber-500/12 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/30",
+    label: "Existencia baja",
+  },
+  agotado: {
+    badge:
+      "bg-rose-500/12 text-rose-700 dark:text-rose-300 ring-1 ring-inset ring-rose-500/30",
+    label: "Agotado",
+  },
 };
 
 /** Datos que captura el formulario de obra (el avance se calcula de etapas). */

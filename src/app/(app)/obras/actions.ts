@@ -22,7 +22,7 @@ const ESTADOS_VALIDOS: EstadoObra[] = [
 
 // Select con cliente y etapas embebidos; etapas ordenadas por `orden`.
 const SELECT =
-  "*, cliente_rel:clientes(id,nombre,telefono,cedula_rnc), etapas(id,obra_id,nombre,estado,completada,orden,fecha_inicio,fecha_fin,porcentaje,notas)";
+  "*, cliente_rel:clientes(id,nombre,telefono,cedula_rnc), etapas(id,obra_id,nombre,estado,completada,orden,fecha_inicio,fecha_fin,porcentaje,notas), materiales(id,obra_id,etapa_id,nombre,unidad,cantidad_comprada,cantidad_usada,costo_unitario,notas,created_at,updated_at)";
 
 export type ListResult = {
   configured: boolean;

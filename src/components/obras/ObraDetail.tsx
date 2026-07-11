@@ -10,8 +10,8 @@ import {
   FileText,
   Pencil,
   Trash2,
-  Layers,
   GanttChartSquare,
+  Package,
   ArrowRight,
 } from "lucide-react";
 import { Button, ProgressBar } from "@/components/primitives";
@@ -20,6 +20,8 @@ import { formatCurrency } from "@/lib/utils";
 import {
   clienteNombre,
   etapasCompletadas,
+  materialesEnAlerta,
+  totalMateriales,
   type Proyecto,
 } from "@/lib/proyectos/types";
 
@@ -49,6 +51,9 @@ export function ObraDetail({
   const cliente = clienteNombre(proyecto);
   const total = etapas?.length ?? 0;
   const done = etapasCompletadas(etapas ?? []);
+  const materiales = proyecto.materiales ?? [];
+  const totalMat = totalMateriales(materiales);
+  const alertasMat = materialesEnAlerta(materiales);
 
   return (
     <div className="flex h-full flex-col">
@@ -123,11 +128,37 @@ export function ObraDetail({
           <ArrowRight className="h-4 w-4 shrink-0 text-content-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-brand" />
         </Link>
 
+        {/* Materiales — enlace a la vista de materiales */}
+        <Link
+          href={`/obras/${proyecto.id}?vista=materiales`}
+          className="group flex items-center gap-3 rounded-xl border border-line bg-surface-2/40 p-3.5 transition-colors hover:border-brand/40 hover:bg-surface-2"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand/12 text-brand ring-1 ring-brand/25">
+            <Package className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2 text-sm font-semibold text-content">
+              Materiales
+              {alertasMat > 0 && (
+                <span className="inline-flex items-center rounded-full bg-rose-500/12 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300">
+                  {alertasMat} en alerta
+                </span>
+              )}
+            </span>
+            <span className="block text-xs text-content-muted">
+              {materiales.length === 0
+                ? "Aún sin materiales — agrega el primero"
+                : `${materiales.length} materiales${totalMat > 0 ? ` · ${formatCurrency(totalMat)}` : ""}`}
+            </span>
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-content-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-brand" />
+        </Link>
+
         {/* Próximamente (patrón de profundidad) */}
         <div className="rounded-xl border border-dashed border-line p-4">
           <p className="flex items-center gap-2 text-sm font-medium text-content">
-            <Layers className="h-4 w-4 text-brand" />
-            Materiales y equipo
+            <Package className="h-4 w-4 text-brand" />
+            Equipo y maquinaria
           </p>
           <p className="mt-1 text-xs text-content-muted">
             Se engancharán a esta obra en las próximas tandas.
