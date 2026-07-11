@@ -2,16 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getProyecto } from "../actions";
-import { EtapasWorkspace } from "./EtapasWorkspace";
+import { ObraWorkspace } from "./ObraWorkspace";
 
-export const metadata: Metadata = { title: "Cronograma" };
+export const metadata: Metadata = { title: "Obra" };
 
 export const dynamic = "force-dynamic";
 
-export default async function ObraCronogramaPage({
+export default async function ObraDetailPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams?: { vista?: string };
 }) {
   const proyecto = await getProyecto(params.id);
 
@@ -33,5 +35,6 @@ export default async function ObraCronogramaPage({
     );
   }
 
-  return <EtapasWorkspace proyecto={proyecto} />;
+  const initialTab = searchParams?.vista === "materiales" ? "materiales" : "cronograma";
+  return <ObraWorkspace proyecto={proyecto} initialTab={initialTab} />;
 }
