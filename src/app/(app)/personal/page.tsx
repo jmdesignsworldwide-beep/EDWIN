@@ -1,15 +1,28 @@
 import type { Metadata } from "next";
-import { Users } from "lucide-react";
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
+import { listPersonal } from "./actions";
+import { listObrasResumen } from "../obras/actions";
+import { PersonalView } from "./PersonalView";
 
 export const metadata: Metadata = { title: "Personal" };
 
-export default function PersonalPage() {
+export const dynamic = "force-dynamic";
+
+export default async function PersonalPage({
+  searchParams,
+}: {
+  searchParams?: { persona?: string };
+}) {
+  const [{ personal, configured, error }, obras] = await Promise.all([
+    listPersonal(),
+    listObrasResumen(),
+  ]);
   return (
-    <PlaceholderPage
-      title="Personal"
-      subtitle="Personal y cuadrillas"
-      icon={Users}
+    <PersonalView
+      personal={personal}
+      obras={obras}
+      configured={configured}
+      loadError={error}
+      initialPersonaId={searchParams?.persona}
     />
   );
 }
