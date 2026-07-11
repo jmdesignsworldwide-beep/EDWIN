@@ -10,11 +10,14 @@ import {
   Pencil,
   Trash2,
   Layers,
+  ListChecks,
+  Check,
+  Circle,
 } from "lucide-react";
 import { Button, ProgressBar } from "@/components/primitives";
 import { EstadoBadge } from "./EstadoBadge";
 import { formatCurrency } from "@/lib/utils";
-import type { Proyecto } from "@/lib/proyectos/types";
+import { clienteNombre, type Proyecto } from "@/lib/proyectos/types";
 
 /**
  * ObraDetail — contenido del panel de detalle. Muestra toda la info capturada
@@ -31,14 +34,18 @@ export function ObraDetail({
 }) {
   const {
     ubicacion,
-    cliente,
     estado,
     avance,
     presupuesto,
     fecha_inicio,
     fecha_fin_estimada,
     notas,
+    etapas,
   } = proyecto;
+  const cliente = clienteNombre(proyecto);
+  const total = etapas?.length ?? 0;
+  const done = etapas?.filter((e) => e.completada).length ?? 0;
+  const etapasOrdenadas = (etapas ?? []).slice().sort((a, b) => a.orden - b.orden);
 
   return (
     <div className="flex h-full flex-col">
@@ -59,6 +66,11 @@ export function ObraDetail({
             </span>
           </div>
           <ProgressBar value={avance} tone={estado === "terminada" ? "success" : "brand"} />
+          {total > 0 && (
+            <p className="mt-1.5 text-xs text-content-subtle">
+              {done} de {total} etapas completadas
+            </p>
+          )}
         </div>
 
         {/* Datos */}
@@ -87,11 +99,50 @@ export function ObraDetail({
           </div>
         )}
 
+        {/* Etapas */}
+        <div>
+          <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-content-muted">
+            <ListChecks className="h-4 w-4 text-content-subtle" />
+            Etapas
+          </p>
+          {total > 0 ? (
+            <ul className="space-y-1.5">
+              {etapasOrdenadas.map((e) => (
+                <li
+                  key={e.id}
+                  className="flex items-center gap-2.5 rounded-xl border border-line bg-surface-2/40 px-3 py-2"
+                >
+                  {e.completada ? (
+                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-success text-white">
+                      <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                    </span>
+                  ) : (
+                    <Circle className="h-5 w-5 shrink-0 text-content-subtle" />
+                  )}
+                  <span
+                    className={
+                      e.completada
+                        ? "text-sm text-content-subtle line-through"
+                        : "text-sm text-content"
+                    }
+                  >
+                    {e.nombre}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="rounded-xl border border-dashed border-line px-3 py-3 text-xs text-content-muted">
+              Sin etapas todavía. Edítala para agregar las etapas y llevar el avance.
+            </p>
+          )}
+        </div>
+
         {/* Próximamente (patrón de profundidad) */}
         <div className="rounded-xl border border-dashed border-line p-4">
           <p className="flex items-center gap-2 text-sm font-medium text-content">
             <Layers className="h-4 w-4 text-brand" />
-            Materiales, etapas y equipo
+            Materiales y equipo
           </p>
           <p className="mt-1 text-xs text-content-muted">
             Se engancharán a esta obra en las próximas tandas.

@@ -2,46 +2,64 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
-import { Button, ProgressBar } from "@/components/primitives";
+import { Button } from "@/components/primitives";
 import {
   ESTADOS,
   UBICACIONES_RD,
+  type Cliente,
+  type EtapaDraft,
   type Proyecto,
   type ProyectoInput,
   type EstadoObra,
 } from "@/lib/proyectos/types";
 import { createProyecto, updateProyecto } from "@/app/(app)/obras/actions";
+import { EtapasManager } from "./EtapasManager";
+import { ClienteSelect } from "./ClienteSelect";
 import { cn } from "@/lib/utils";
 
 /**
- * ObraForm — crear/editar una obra. Validación en cliente + servidor. El
- * avance muestra una barra que se llena en vivo. Al guardar persiste en
- * Supabase y notifica a la vista para refrescar.
+ * ObraForm — crear/editar una obra. El avance se lleva por etapas (calculado),
+ * y el cliente es un cliente registrado (selector + quick-add). Al guardar
+ * persiste obra + etapas + cliente_id en Supabase y notifica para refrescar.
  */
 export function ObraForm({
   proyecto,
+  clientes: clientesProp,
   onSaved,
   onCancel,
 }: {
   proyecto?: Proyecto;
+  clientes: Cliente[];
   onSaved: () => void;
   onCancel: () => void;
 }) {
   const isEdit = Boolean(proyecto);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [clientes, setClientes] = useState<Cliente[]>(clientesProp);
 
   const [form, setForm] = useState<ProyectoInput>({
     nombre: proyecto?.nombre ?? "",
     ubicacion: proyecto?.ubicacion ?? "",
-    cliente: proyecto?.cliente ?? "",
+    cliente_id: proyecto?.cliente_id ?? null,
     estado: proyecto?.estado ?? "planificacion",
     fecha_inicio: proyecto?.fecha_inicio ?? "",
     fecha_fin_estimada: proyecto?.fecha_fin_estimada ?? "",
-    avance: proyecto?.avance ?? 0,
     presupuesto: proyecto?.presupuesto ?? null,
     notas: proyecto?.notas ?? "",
   });
+
+  const [etapas, setEtapas] = useState<EtapaDraft[]>(
+    (proyecto?.etapas ?? [])
+      .slice()
+      .sort((a, b) => a.orden - b.orden)
+      .map((e) => ({
+        id: e.id,
+        nombre: e.nombre,
+        completada: e.completada,
+        orden: e.orden,
+      })),
+  );
 
   function set<K extends keyof ProyectoInput>(key: K, value: ProyectoInput[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -63,13 +81,10 @@ export function ObraForm({
             : form.presupuesto,
       };
       const res = isEdit
-        ? await updateProyecto(proyecto!.id, payload)
-        : await createProyecto(payload);
-      if (res.ok) {
-        onSaved();
-      } else {
-        setError(res.error);
-      }
+        ? await updateProyecto(proyecto!.id, payload, etapas)
+        : await createProyecto(payload, etapas);
+      if (res.ok) onSaved();
+      else setError(res.error);
     });
   }
 
@@ -106,29 +121,28 @@ export function ObraForm({
             </datalist>
           </Field>
 
-          <Field label="Cliente / propietario">
-            <input
-              type="text"
-              value={form.cliente ?? ""}
-              onChange={(e) => set("cliente", e.target.value)}
-              placeholder="Nombre del cliente"
-              className={inputCls}
-            />
+          <Field label="Estado">
+            <select
+              value={form.estado}
+              onChange={(e) => set("estado", e.target.value as EstadoObra)}
+              className={cn(inputCls, "appearance-none")}
+            >
+              {ESTADOS.map((e) => (
+                <option key={e.value} value={e.value}>
+                  {e.label}
+                </option>
+              ))}
+            </select>
           </Field>
         </div>
 
-        <Field label="Estado">
-          <select
-            value={form.estado}
-            onChange={(e) => set("estado", e.target.value as EstadoObra)}
-            className={cn(inputCls, "appearance-none")}
-          >
-            {ESTADOS.map((e) => (
-              <option key={e.value} value={e.value}>
-                {e.label}
-              </option>
-            ))}
-          </select>
+        <Field label="Cliente / propietario">
+          <ClienteSelect
+            clientes={clientes}
+            value={form.cliente_id}
+            onChange={(id) => set("cliente_id", id)}
+            onClienteCreated={(c) => setClientes((prev) => [c, ...prev])}
+          />
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -150,24 +164,10 @@ export function ObraForm({
           </Field>
         </div>
 
-        <Field label={`Avance — ${form.avance}%`}>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={1}
-            value={form.avance}
-            onChange={(e) => set("avance", Number(e.target.value))}
-            className="w-full accent-brand"
-            aria-label="Avance"
-          />
-          <ProgressBar
-            value={form.avance}
-            size="sm"
-            className="mt-2"
-            tone={form.estado === "terminada" ? "success" : "brand"}
-          />
-        </Field>
+        {/* Avance por etapas (reemplaza el slider) */}
+        <div className="rounded-xl border border-line bg-surface/40 p-3.5">
+          <EtapasManager etapas={etapas} onChange={setEtapas} />
+        </div>
 
         <Field label="Presupuesto de la obra (RD$)">
           <input
