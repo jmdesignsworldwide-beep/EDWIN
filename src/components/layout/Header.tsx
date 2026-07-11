@@ -4,13 +4,19 @@ import { Bell, Menu, Search } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { LiveBackupIndicator } from "./LiveBackupIndicator";
-import { cn } from "@/lib/utils";
+import type { ShellUser } from "./Shell";
+
+function initials(nombre: string): string {
+  const parts = nombre.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
+}
 
 /**
- * Header — search, live-backup indicator, notifications, theme toggle, logout.
+ * Header — search, live-backup indicator, notifications, theme toggle, cuenta.
  * Sticky, glassy. Mobile shows a menu button to open the sidebar drawer.
  */
-export function Header({ onMenu }: { onMenu: () => void }) {
+export function Header({ onMenu, user }: { onMenu: () => void; user: ShellUser }) {
   return (
     <header className="glass sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-line px-4 sm:px-6">
       <button
@@ -48,17 +54,15 @@ export function Header({ onMenu }: { onMenu: () => void }) {
 
         <ThemeToggle />
 
-        {/* User avatar (placeholder) */}
-        <button
-          type="button"
-          className={cn(
-            "grid h-9 w-9 place-items-center rounded-full bg-brand-gradient text-sm font-bold text-brand-ink shadow-glow",
-          )}
-          aria-label="Cuenta"
-          title="Edwin Espaillat"
+        {/* Cuenta */}
+        <Link
+          href="/cambiar-clave"
+          className="grid h-9 w-9 place-items-center rounded-full bg-brand-gradient text-sm font-bold text-brand-ink shadow-glow"
+          aria-label="Mi cuenta"
+          title={`${user.nombre} · cambiar contraseña`}
         >
-          EE
-        </button>
+          {initials(user.nombre)}
+        </Link>
       </div>
     </header>
   );

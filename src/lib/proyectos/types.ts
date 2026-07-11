@@ -9,6 +9,16 @@ export type EstadoObra =
   | "pausada"
   | "terminada";
 
+export type Usuario = {
+  id: string;
+  nombre: string;
+  email: string;
+  rol: "admin" | "usuario";
+  activo: boolean;
+  must_change_password: boolean;
+  created_at: string;
+};
+
 export type Cliente = {
   id: string;
   nombre: string;

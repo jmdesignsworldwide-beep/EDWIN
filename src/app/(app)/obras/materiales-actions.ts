@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSession } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import {
   createAdminClient,
   isSupabaseConfigured,
@@ -57,7 +57,7 @@ export async function createMaterial(
   obraId: string,
   raw: unknown,
 ): Promise<MaterialMutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
   if (!obraId) return { ok: false, error: "Falta la obra." };
   const parsed = parse(raw);
@@ -81,7 +81,7 @@ export async function updateMaterial(
   materialId: string,
   raw: unknown,
 ): Promise<MaterialMutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
   if (!obraId || !materialId) return { ok: false, error: "Falta identificador." };
   const parsed = parse(raw);
@@ -106,7 +106,7 @@ export async function deleteMaterial(
   obraId: string,
   materialId: string,
 ): Promise<MaterialMutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
   if (!obraId || !materialId) return { ok: false, error: "Falta identificador." };
 

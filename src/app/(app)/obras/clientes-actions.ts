@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSession } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import {
   createAdminClient,
   isSupabaseConfigured,
@@ -24,7 +24,7 @@ export type ClienteMutationResult =
 
 /** Lista los clientes registrados (para el selector del formulario de obra). */
 export async function listClientes(): Promise<ClientesListResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { configured: false, clientes: [] };
 
   try {
@@ -48,7 +48,7 @@ export async function listClientes(): Promise<ClientesListResult> {
 export async function createCliente(
   raw: ClienteInput,
 ): Promise<ClienteMutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Supabase aún no está configurado." };
   }
