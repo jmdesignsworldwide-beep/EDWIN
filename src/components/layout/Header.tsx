@@ -1,0 +1,65 @@
+"use client";
+
+import { Bell, Menu, Search } from "lucide-react";
+import Link from "next/link";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { LiveBackupIndicator } from "./LiveBackupIndicator";
+import { cn } from "@/lib/utils";
+
+/**
+ * Header — search, live-backup indicator, notifications, theme toggle, logout.
+ * Sticky, glassy. Mobile shows a menu button to open the sidebar drawer.
+ */
+export function Header({ onMenu }: { onMenu: () => void }) {
+  return (
+    <header className="glass sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-line px-4 sm:px-6">
+      <button
+        type="button"
+        onClick={onMenu}
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-content-muted hover:bg-surface-2 lg:hidden"
+        aria-label="Abrir menú"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {/* Search */}
+      <div className="relative flex-1 max-w-md">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-content-subtle" />
+        <input
+          type="search"
+          placeholder="Buscar obras, materiales, personal…"
+          aria-label="Buscar"
+          className="h-10 w-full rounded-xl border border-line bg-surface/60 pl-9 pr-3 text-sm text-content placeholder:text-content-subtle transition-colors focus:border-brand/50 focus:bg-surface focus:outline-none"
+        />
+      </div>
+
+      <div className="ml-auto flex items-center gap-2 sm:gap-3">
+        <LiveBackupIndicator className="hidden xs:inline-flex" />
+
+        {/* Notifications */}
+        <Link
+          href="/notificaciones"
+          className="relative grid h-9 w-9 place-items-center rounded-full border border-line bg-surface/70 text-content-muted transition-colors hover:border-brand/40 hover:text-brand"
+          aria-label="Notificaciones"
+        >
+          <Bell className="h-[18px] w-[18px]" />
+          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-danger ring-2 ring-bg" />
+        </Link>
+
+        <ThemeToggle />
+
+        {/* User avatar (placeholder) */}
+        <button
+          type="button"
+          className={cn(
+            "grid h-9 w-9 place-items-center rounded-full bg-brand-gradient text-sm font-bold text-brand-ink shadow-glow",
+          )}
+          aria-label="Cuenta"
+          title="Edwin Espaillat"
+        >
+          EE
+        </button>
+      </div>
+    </header>
+  );
+}

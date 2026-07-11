@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * ============================================================
+ *  DESIGN TOKENS · Constructora Edwin
+ *  All theme-dependent colors are RGB triplets so Tailwind's
+ *  `<alpha-value>` opacity utilities keep working.
+ *  Contrast note: on the CREAM (light) theme, `--brand` is a
+ *  DEEPER amber so gold-as-text stays legible. Never place pale
+ *  gold text on cream.
+ * ============================================================
+ */
+
+:root,
+.light {
+  /* Surfaces — warm cream, elegant (not an inversion) */
+  --bg: 246 241 232;
+  --bg-elevated: 252 248 241;
+  --surface: 255 253 248;
+  --surface-2: 248 243 234;
+  --line: 224 216 201;
+
+  /* Text — warm charcoal, strong contrast on cream */
+  --content: 38 34 27;
+  --content-muted: 92 84 70;
+  --content-subtle: 132 122 104;
+
+  /* Brand — deeper amber so it reads as text on cream */
+  --brand: 176 125 16;
+  --brand-soft: 224 168 46;
+  --brand-ink: 40 28 4;
+
+  /* Accent — emerald tuned darker for contrast */
+  --accent: 5 138 97;
+  --accent-soft: 16 185 129;
+
+  --danger: 200 42 42;
+  --success: 22 143 66;
+
+  --shadow-card: 0 1px 2px rgba(70, 56, 24, 0.06),
+    0 10px 30px -14px rgba(80, 62, 20, 0.22);
+  --shadow-elevated: 0 2px 4px rgba(70, 56, 24, 0.08),
+    0 24px 48px -20px rgba(80, 62, 20, 0.28);
+
+  /* Aurora tints */
+  --aurora-1: 240 180 41;
+  --aurora-2: 16 185 129;
+  --aurora-3: 244 208 120;
+  --aurora-opacity: 0.16;
+}
+
+.dark {
+  /* Surfaces — near-black */
+  --bg: 10 11 15;
+  --bg-elevated: 16 18 24;
+  --surface: 21 23 30;
+  --surface-2: 30 33 42;
+  --line: 44 48 58;
+
+  /* Text — near white */
+  --content: 244 244 247;
+  --content-muted: 166 171 182;
+  --content-subtle: 118 123 135;
+
+  /* Brand — full hard-hat gold #f0b429 */
+  --brand: 240 180 41;
+  --brand-soft: 250 205 96;
+  --brand-ink: 26 19 4;
+
+  /* Accent — emerald */
+  --accent: 16 185 129;
+  --accent-soft: 52 211 153;
+
+  --danger: 244 63 94;
+  --success: 34 197 94;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5),
+    0 10px 30px -12px rgba(0, 0, 0, 0.6);
+  --shadow-elevated: 0 2px 6px rgba(0, 0, 0, 0.55),
+    0 28px 56px -20px rgba(0, 0, 0, 0.7);
+
+  /* Aurora tints — brighter, breathing */
+  --aurora-1: 240 180 41;
+  --aurora-2: 16 185 129;
+  --aurora-3: 96 76 200;
+  --aurora-opacity: 0.28;
+}
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-bg text-content antialiased;
+    font-feature-settings: "cv11", "ss01";
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Focus ring — brand, accessible */
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: rgb(var(--brand) / 0.28);
+    color: rgb(var(--content));
+  }
+
+  /* Elegant scrollbars */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--line));
+    border-radius: 999px;
+    border: 2px solid rgb(var(--bg));
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--content-subtle));
+  }
+}
+
+@layer components {
+  /* Glassmorphism surface — subtle, layered */
+  .glass {
+    background: rgb(var(--surface) / 0.72);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgb(var(--line) / 0.7);
+  }
+  .glass-strong {
+    background: rgb(var(--surface) / 0.88);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgb(var(--line) / 0.8);
+  }
+
+  /* Gold text with guaranteed contrast (uses theme-tuned --brand) */
+  .text-gold {
+    color: rgb(var(--brand));
+  }
+}
+
+/* Respect reduced-motion globally as a safety net */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
