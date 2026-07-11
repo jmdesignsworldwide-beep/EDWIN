@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   MapPin,
   User2,
@@ -10,18 +11,21 @@ import {
   Pencil,
   Trash2,
   Layers,
-  ListChecks,
-  Check,
-  Circle,
+  GanttChartSquare,
+  ArrowRight,
 } from "lucide-react";
 import { Button, ProgressBar } from "@/components/primitives";
 import { EstadoBadge } from "./EstadoBadge";
 import { formatCurrency } from "@/lib/utils";
-import { clienteNombre, type Proyecto } from "@/lib/proyectos/types";
+import {
+  clienteNombre,
+  etapasCompletadas,
+  type Proyecto,
+} from "@/lib/proyectos/types";
 
 /**
- * ObraDetail — contenido del panel de detalle. Muestra toda la info capturada
- * de la obra. Deja lugar para materiales/etapas/equipo en tandas futuras.
+ * ObraDetail — contenido del panel de detalle (SlideOver). Resume la obra y sus
+ * etapas, y enlaza al cronograma (Gantt) para gestionarlas.
  */
 export function ObraDetail({
   proyecto,
@@ -44,8 +48,7 @@ export function ObraDetail({
   } = proyecto;
   const cliente = clienteNombre(proyecto);
   const total = etapas?.length ?? 0;
-  const done = etapas?.filter((e) => e.completada).length ?? 0;
-  const etapasOrdenadas = (etapas ?? []).slice().sort((a, b) => a.orden - b.orden);
+  const done = etapasCompletadas(etapas ?? []);
 
   return (
     <div className="flex h-full flex-col">
@@ -99,44 +102,26 @@ export function ObraDetail({
           </div>
         )}
 
-        {/* Etapas */}
-        <div>
-          <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-content-muted">
-            <ListChecks className="h-4 w-4 text-content-subtle" />
-            Etapas
-          </p>
-          {total > 0 ? (
-            <ul className="space-y-1.5">
-              {etapasOrdenadas.map((e) => (
-                <li
-                  key={e.id}
-                  className="flex items-center gap-2.5 rounded-xl border border-line bg-surface-2/40 px-3 py-2"
-                >
-                  {e.completada ? (
-                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-success text-white">
-                      <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                    </span>
-                  ) : (
-                    <Circle className="h-5 w-5 shrink-0 text-content-subtle" />
-                  )}
-                  <span
-                    className={
-                      e.completada
-                        ? "text-sm text-content-subtle line-through"
-                        : "text-sm text-content"
-                    }
-                  >
-                    {e.nombre}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="rounded-xl border border-dashed border-line px-3 py-3 text-xs text-content-muted">
-              Sin etapas todavía. Edítala para agregar las etapas y llevar el avance.
-            </p>
-          )}
-        </div>
+        {/* Cronograma (etapas) — enlace a la vista completa con Gantt */}
+        <Link
+          href={`/obras/${proyecto.id}`}
+          className="group flex items-center gap-3 rounded-xl border border-line bg-surface-2/40 p-3.5 transition-colors hover:border-brand/40 hover:bg-surface-2"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand/12 text-brand ring-1 ring-brand/25">
+            <GanttChartSquare className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-content">
+              Cronograma y etapas
+            </span>
+            <span className="block text-xs text-content-muted">
+              {total > 0
+                ? `${done} de ${total} etapas completadas`
+                : "Aún sin etapas — agrega la primera fase"}
+            </span>
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-content-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-brand" />
+        </Link>
 
         {/* Próximamente (patrón de profundidad) */}
         <div className="rounded-xl border border-dashed border-line p-4">

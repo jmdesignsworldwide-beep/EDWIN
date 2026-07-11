@@ -9,7 +9,6 @@ import {
 import {
   calcularAvance,
   type EstadoObra,
-  type EtapaDraft,
   type Proyecto,
   type ProyectoInput,
 } from "@/lib/proyectos/types";
@@ -23,7 +22,7 @@ const ESTADOS_VALIDOS: EstadoObra[] = [
 
 // Select con cliente y etapas embebidos; etapas ordenadas por `orden`.
 const SELECT =
-  "*, cliente_rel:clientes(id,nombre,telefono,cedula_rnc), etapas(id,obra_id,nombre,completada,orden,fecha_inicio,fecha_fin,porcentaje)";
+  "*, cliente_rel:clientes(id,nombre,telefono,cedula_rnc), etapas(id,obra_id,nombre,estado,completada,orden,fecha_inicio,fecha_fin,porcentaje,notas)";
 
 export type ListResult = {
   configured: boolean;
@@ -71,24 +70,6 @@ function parseInput(raw: unknown): ProyectoInput | { error: string } {
   };
 }
 
-/** Normaliza las etapas del formulario (descarta nombres vacíos, fija orden). */
-function parseEtapas(raw: unknown): EtapaDraft[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((e, i) => {
-      const d = (e ?? {}) as Record<string, unknown>;
-      const nombre = String(d.nombre ?? "").trim();
-      return {
-        id: typeof d.id === "string" ? d.id : undefined,
-        nombre,
-        completada: Boolean(d.completada),
-        orden: Number.isFinite(Number(d.orden)) ? Number(d.orden) : i,
-      };
-    })
-    .filter((e) => e.nombre !== "")
-    .map((e, i) => ({ ...e, orden: i }));
-}
-
 export async function listProyectos(): Promise<ListResult> {
   requireSession();
   if (!isSupabaseConfigured()) return { configured: false, proyectos: [] };
@@ -120,39 +101,40 @@ export async function listProyectos(): Promise<ListResult> {
   }
 }
 
-export async function createProyecto(
-  raw: unknown,
-  etapasRaw: unknown,
-): Promise<MutationResult> {
+/** Obtiene una obra por id (con cliente y etapas) para la página de cronograma. */
+export async function getProyecto(id: string): Promise<Proyecto | null> {
+  requireSession();
+  if (!isSupabaseConfigured() || !id) return null;
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("proyectos")
+      .select(SELECT)
+      .eq("id", id)
+      .order("orden", { referencedTable: "etapas", ascending: true })
+      .single();
+    if (error || !data) return null;
+    const p = data as any;
+    return { ...p, etapas: p.etapas ?? [], avance: calcularAvance(p.etapas ?? []) } as Proyecto;
+  } catch {
+    return null;
+  }
+}
+
+export async function createProyecto(raw: unknown): Promise<MutationResult> {
   requireSession();
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Supabase aún no está configurado." };
   }
-
   const parsed = parseInput(raw);
   if ("error" in parsed) return { ok: false, error: parsed.error };
-  const etapas = parseEtapas(etapasRaw);
 
   try {
     const supabase = createAdminClient();
-    const { data: obra, error } = await supabase
+    const { error } = await supabase
       .from("proyectos")
-      .insert({ ...parsed, avance: calcularAvance(etapas) })
-      .select("id")
-      .single();
+      .insert({ ...parsed, avance: 0 });
     if (error) throw error;
-
-    if (etapas.length) {
-      const rows = etapas.map((e, i) => ({
-        obra_id: obra.id,
-        nombre: e.nombre,
-        completada: e.completada,
-        orden: i,
-      }));
-      const { error: e2 } = await supabase.from("etapas").insert(rows);
-      if (e2) throw e2;
-    }
-
     revalidatePath("/obras");
     revalidatePath("/dashboard");
     return { ok: true };
@@ -164,7 +146,6 @@ export async function createProyecto(
 export async function updateProyecto(
   id: string,
   raw: unknown,
-  etapasRaw: unknown,
 ): Promise<MutationResult> {
   requireSession();
   if (!isSupabaseConfigured()) {
@@ -174,50 +155,13 @@ export async function updateProyecto(
 
   const parsed = parseInput(raw);
   if ("error" in parsed) return { ok: false, error: parsed.error };
-  const etapas = parseEtapas(etapasRaw);
 
   try {
     const supabase = createAdminClient();
-
-    const { error } = await supabase
-      .from("proyectos")
-      .update({ ...parsed, avance: calcularAvance(etapas) })
-      .eq("id", id);
+    const { error } = await supabase.from("proyectos").update(parsed).eq("id", id);
     if (error) throw error;
-
-    // Reconciliar etapas preservando ids (base para el Gantt futuro).
-    const { data: existing } = await supabase
-      .from("etapas")
-      .select("id")
-      .eq("obra_id", id);
-    const existingIds = new Set((existing ?? []).map((e: any) => e.id));
-    const incomingIds = new Set(
-      etapas.filter((e) => e.id).map((e) => e.id as string),
-    );
-
-    const toDelete = [...existingIds].filter((x) => !incomingIds.has(x));
-    if (toDelete.length) {
-      await supabase.from("etapas").delete().in("id", toDelete);
-    }
-
-    const toInsert = etapas
-      .filter((e) => !e.id)
-      .map((e, i) => ({
-        obra_id: id,
-        nombre: e.nombre,
-        completada: e.completada,
-        orden: e.orden,
-      }));
-    if (toInsert.length) await supabase.from("etapas").insert(toInsert);
-
-    for (const e of etapas.filter((e) => e.id)) {
-      await supabase
-        .from("etapas")
-        .update({ nombre: e.nombre, completada: e.completada, orden: e.orden })
-        .eq("id", e.id!);
-    }
-
     revalidatePath("/obras");
+    revalidatePath(`/obras/${id}`);
     revalidatePath("/dashboard");
     return { ok: true };
   } catch {
