@@ -1,35 +1,26 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { Eye, EyeOff, Lock, User, Loader2, ArrowRight } from "lucide-react";
+import { login } from "@/app/login/actions";
 import { cn } from "@/lib/utils";
 
 /**
- * LoginForm — usuario + contraseña. Sin registro abierto: las cuentas las
- * crea el administrador. Tanda 1 sin auth real; el submit simula el ingreso
- * y navega al panel (se conectará a Supabase Auth en una ola posterior).
+ * LoginForm — usuario + contraseña. Sin registro abierto: las cuentas las crea
+ * el administrador. Al ingresar se crea la sesión (server action) y el
+ * middleware habilita el acceso a los datos. La validación real de credenciales
+ * llega con Supabase Auth.
  */
 export function LoginForm() {
-  const router = useRouter();
   const reduced = useReducedMotion();
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    // Placeholder: sin backend en Tanda 1. Simula latencia y entra al panel.
-    await new Promise((r) => setTimeout(r, 700));
-    router.push("/dashboard");
-  }
+  const [state, formAction] = useFormState(login, null as { error?: string } | null);
 
   return (
     <motion.form
-      onSubmit={handleSubmit}
+      action={formAction}
       initial={reduced ? false : { opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -45,37 +36,25 @@ export function LoginForm() {
       </div>
 
       <div className="space-y-4">
-        <Field
-          id="username"
-          label="Usuario"
-          icon={<User className="h-4 w-4" />}
-        >
+        <Field id="username" label="Usuario" icon={<User className="h-4 w-4" />}>
           <input
             id="username"
             name="username"
             type="text"
             autoComplete="username"
             required
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
             placeholder="tu.usuario"
             className="h-11 w-full rounded-xl border border-line bg-surface/60 pl-10 pr-3 text-sm text-content placeholder:text-content-subtle transition-colors focus:border-brand/50 focus:bg-surface focus:outline-none"
           />
         </Field>
 
-        <Field
-          id="password"
-          label="Contraseña"
-          icon={<Lock className="h-4 w-4" />}
-        >
+        <Field id="password" label="Contraseña" icon={<Lock className="h-4 w-4" />}>
           <input
             id="password"
             name="password"
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
             required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             className="h-11 w-full rounded-xl border border-line bg-surface/60 pl-10 pr-10 text-sm text-content placeholder:text-content-subtle transition-colors focus:border-brand/50 focus:bg-surface focus:outline-none"
           />
@@ -83,40 +62,47 @@ export function LoginForm() {
             type="button"
             onClick={() => setShowPassword((s) => !s)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-content-subtle transition-colors hover:text-content"
-            aria-label={
-              showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-            }
+            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
           >
-            {showPassword ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </Field>
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className={cn(
-          "group mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-gradient text-sm font-semibold text-brand-ink shadow-glow transition-transform active:scale-[0.99] disabled:opacity-70",
-        )}
-      >
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <>
-            Ingresar
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </>
-        )}
-      </button>
+      {state?.error && (
+        <p className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-xs font-medium text-danger">
+          {state.error}
+        </p>
+      )}
+
+      <SubmitButton />
 
       <p className="mt-5 text-center text-xs text-content-subtle">
         Las cuentas las crea el administrador. Si no puedes ingresar, contáctalo.
       </p>
     </motion.form>
+  );
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className={cn(
+        "group mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-gradient text-sm font-semibold text-brand-ink shadow-glow transition-transform active:scale-[0.99] disabled:opacity-70",
+      )}
+    >
+      {pending ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <>
+          Ingresar
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        </>
+      )}
+    </button>
   );
 }
 
@@ -133,10 +119,7 @@ function Field({
 }) {
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="mb-1.5 block text-xs font-medium text-content-muted"
-      >
+      <label htmlFor={id} className="mb-1.5 block text-xs font-medium text-content-muted">
         {label}
       </label>
       <div className="relative">
