@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
-import { Truck } from "lucide-react";
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
+import { listProveedores } from "./actions";
+import { listObrasResumen } from "../obras/actions";
+import { ProveedoresView } from "./ProveedoresView";
 
 export const metadata: Metadata = { title: "Proveedores" };
 
-export default function ProveedoresPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ProveedoresPage() {
+  const [{ proveedores, configured, error }, obras] = await Promise.all([
+    listProveedores(),
+    listObrasResumen(),
+  ]);
   return (
-    <PlaceholderPage
-      title="Proveedores"
-      subtitle="Directorio de proveedores"
-      icon={Truck}
+    <ProveedoresView
+      proveedores={proveedores}
+      obras={obras}
+      configured={configured}
+      loadError={error}
     />
   );
 }

@@ -22,7 +22,7 @@ const ESTADOS_VALIDOS: EstadoObra[] = [
 
 // Select con cliente y etapas embebidos; etapas ordenadas por `orden`.
 const SELECT =
-  "*, cliente_rel:clientes(id,nombre,telefono,cedula_rnc), etapas(id,obra_id,nombre,estado,completada,orden,fecha_inicio,fecha_fin,porcentaje,notas), materiales(id,obra_id,etapa_id,nombre,unidad,cantidad_comprada,cantidad_usada,costo_unitario,notas,created_at,updated_at)";
+  "*, cliente_rel:clientes(id,nombre,telefono,cedula_rnc), etapas(id,obra_id,nombre,estado,completada,orden,fecha_inicio,fecha_fin,porcentaje,notas), materiales(id,obra_id,etapa_id,proveedor_id,proveedor_rel:proveedores(id,nombre),nombre,unidad,cantidad_comprada,cantidad_usada,costo_unitario,notas,created_at,updated_at)";
 
 export type ListResult = {
   configured: boolean;
@@ -118,6 +118,23 @@ export async function getProyecto(id: string): Promise<Proyecto | null> {
     return { ...p, etapas: p.etapas ?? [], avance: calcularAvance(p.etapas ?? []) } as Proyecto;
   } catch {
     return null;
+  }
+}
+
+/** Resumen liviano de obras (id + nombre) para selectores. */
+export async function listObrasResumen(): Promise<{ id: string; nombre: string }[]> {
+  requireSession();
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("proyectos")
+      .select("id,nombre")
+      .order("nombre", { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as { id: string; nombre: string }[];
+  } catch {
+    return [];
   }
 }
 

@@ -11,6 +11,7 @@ import {
   clienteNombre,
   etapasCompletadas,
   materialesEnAlerta,
+  type Proveedor,
   type Proyecto,
 } from "@/lib/proyectos/types";
 import { cn } from "@/lib/utils";
@@ -19,9 +20,11 @@ type Tab = "cronograma" | "materiales";
 
 export function ObraWorkspace({
   proyecto,
+  proveedores,
   initialTab = "cronograma",
 }: {
   proyecto: Proyecto;
+  proveedores: Proveedor[];
   initialTab?: Tab;
 }) {
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -82,7 +85,7 @@ export function ObraWorkspace({
       {tab === "cronograma" ? (
         <EtapasSection proyecto={proyecto} />
       ) : (
-        <MaterialesSection proyecto={proyecto} />
+        <MaterialesSection proyecto={proyecto} proveedores={proveedores} />
       )}
     </>
   );

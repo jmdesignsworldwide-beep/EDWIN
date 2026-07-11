@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Package, Trash2, Pencil, Layers } from "lucide-react";
+import { Plus, Package, Trash2, Pencil, Layers, Truck } from "lucide-react";
 import { Reveal, Stagger, Button, EmptyState, ProgressBar } from "@/components/primitives";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -15,6 +15,7 @@ import {
   nivelExistencia,
   totalMateriales,
   type Material,
+  type Proveedor,
   type Proyecto,
 } from "@/lib/proyectos/types";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -24,7 +25,13 @@ type Panel =
   | { type: "create" }
   | { type: "edit"; material: Material };
 
-export function MaterialesSection({ proyecto }: { proyecto: Proyecto }) {
+export function MaterialesSection({
+  proyecto,
+  proveedores,
+}: {
+  proyecto: Proyecto;
+  proveedores: Proveedor[];
+}) {
   const router = useRouter();
   const [panel, setPanel] = useState<Panel>({ type: "closed" });
   const [toDelete, setToDelete] = useState<Material | null>(null);
@@ -129,7 +136,7 @@ export function MaterialesSection({ proyecto }: { proyecto: Proyecto }) {
       )}
 
       <Modal open={panel.type === "create"} onClose={close} title="Nuevo material" subtitle={proyecto.nombre}>
-        <MaterialForm obraId={proyecto.id} etapas={etapas} onSaved={savedAndClose} onCancel={close} />
+        <MaterialForm obraId={proyecto.id} etapas={etapas} proveedores={proveedores} onSaved={savedAndClose} onCancel={close} />
       </Modal>
       <Modal
         open={panel.type === "edit"}
@@ -141,6 +148,7 @@ export function MaterialesSection({ proyecto }: { proyecto: Proyecto }) {
           <MaterialForm
             obraId={proyecto.id}
             etapas={etapas}
+            proveedores={proveedores}
             material={panel.material}
             onSaved={savedAndClose}
             onCancel={close}
@@ -188,6 +196,12 @@ function MaterialCard({
               </span>
             )}
           </div>
+          {material.proveedor_rel && (
+            <span className="mt-0.5 flex items-center gap-1 truncate text-xs text-content-subtle">
+              <Truck className="h-3 w-3 shrink-0" />
+              {material.proveedor_rel.nombre}
+            </span>
+          )}
         </button>
         <div className="flex shrink-0 items-center gap-1">
           <button
