@@ -39,6 +39,7 @@ function parse(raw: unknown): MaterialInput | { error: string } {
   return {
     nombre,
     etapa_id: str(d.etapa_id),
+    proveedor_id: str(d.proveedor_id),
     unidad: str(d.unidad),
     cantidad_comprada: comprada as number | null,
     cantidad_usada: usada as number | null,

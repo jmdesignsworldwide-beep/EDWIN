@@ -8,11 +8,13 @@ import {
   type Etapa,
   type Material,
   type MaterialInput,
+  type Proveedor,
 } from "@/lib/proyectos/types";
 import {
   createMaterial,
   updateMaterial,
 } from "@/app/(app)/obras/materiales-actions";
+import { ProveedorSelect } from "./ProveedorSelect";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,12 +25,14 @@ import { cn } from "@/lib/utils";
 export function MaterialForm({
   obraId,
   etapas,
+  proveedores: proveedoresProp,
   material,
   onSaved,
   onCancel,
 }: {
   obraId: string;
   etapas: Etapa[];
+  proveedores: Proveedor[];
   material?: Material;
   onSaved: () => void;
   onCancel: () => void;
@@ -36,10 +40,12 @@ export function MaterialForm({
   const isEdit = Boolean(material);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [proveedores, setProveedores] = useState<Proveedor[]>(proveedoresProp);
 
   const [form, setForm] = useState<MaterialInput>({
     nombre: material?.nombre ?? "",
     etapa_id: material?.etapa_id ?? null,
+    proveedor_id: material?.proveedor_id ?? null,
     unidad: material?.unidad ?? "",
     cantidad_comprada: material?.cantidad_comprada ?? null,
     cantidad_usada: material?.cantidad_usada ?? null,
@@ -124,6 +130,18 @@ export function MaterialForm({
               ))}
             </datalist>
           </div>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-content-muted">
+            Proveedor (opcional)
+          </label>
+          <ProveedorSelect
+            proveedores={proveedores}
+            value={form.proveedor_id}
+            onChange={(id) => set("proveedor_id", id)}
+            onCreated={(p) => setProveedores((prev) => [p, ...prev])}
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">

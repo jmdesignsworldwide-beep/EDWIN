@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getProyecto } from "../actions";
+import { listProveedores } from "../../proveedores/actions";
 import { ObraWorkspace } from "./ObraWorkspace";
 
 export const metadata: Metadata = { title: "Obra" };
@@ -15,7 +16,10 @@ export default async function ObraDetailPage({
   params: { id: string };
   searchParams?: { vista?: string };
 }) {
-  const proyecto = await getProyecto(params.id);
+  const [proyecto, { proveedores }] = await Promise.all([
+    getProyecto(params.id),
+    listProveedores(),
+  ]);
 
   if (!proyecto) {
     return (
@@ -36,5 +40,7 @@ export default async function ObraDetailPage({
   }
 
   const initialTab = searchParams?.vista === "materiales" ? "materiales" : "cronograma";
-  return <ObraWorkspace proyecto={proyecto} initialTab={initialTab} />;
+  return (
+    <ObraWorkspace proyecto={proyecto} proveedores={proveedores} initialTab={initialTab} />
+  );
 }

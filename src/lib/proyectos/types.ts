@@ -129,6 +129,8 @@ export type Material = {
   id: string;
   obra_id: string;
   etapa_id: string | null;
+  proveedor_id: string | null;
+  proveedor_rel: { id: string; nombre: string } | null;
   nombre: string;
   unidad: string | null;
   cantidad_comprada: number | null;
@@ -142,12 +144,80 @@ export type Material = {
 export type MaterialInput = {
   nombre: string;
   etapa_id: string | null;
+  proveedor_id: string | null;
   unidad: string | null;
   cantidad_comprada: number | null;
   cantidad_usada: number | null;
   costo_unitario: number | null;
   notas: string | null;
 };
+
+export type Proveedor = {
+  id: string;
+  nombre: string;
+  telefono: string | null;
+  rnc_cedula: string | null;
+  categoria: string | null;
+  contacto: string | null;
+  notas: string | null;
+  compras?: Compra[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProveedorInput = {
+  nombre: string;
+  telefono: string | null;
+  rnc_cedula: string | null;
+  categoria: string | null;
+  contacto: string | null;
+  notas: string | null;
+};
+
+export type Compra = {
+  id: string;
+  proveedor_id: string;
+  obra_id: string | null;
+  fecha: string;
+  descripcion: string | null;
+  monto: number | null;
+  notas: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CompraInput = {
+  obra_id: string | null;
+  fecha: string;
+  descripcion: string | null;
+  monto: number | null;
+  notas: string | null;
+};
+
+/** Categorías/rubros comunes de proveedores de construcción (RD). */
+export const CATEGORIAS_PROVEEDOR = [
+  "Ferretería",
+  "Bloquera",
+  "Agregados",
+  "Pinturas",
+  "Eléctrico",
+  "Plomería",
+  "Maderas",
+  "Aceros",
+  "Transporte",
+  "Otros",
+];
+
+/** Total comprado a un proveedor (suma de montos de sus compras). */
+export function totalComprado(compras: Compra[]): number {
+  return compras.reduce((acc, c) => acc + (c.monto ?? 0), 0);
+}
+
+/** Fecha de la última compra (ISO) o null. */
+export function ultimaCompra(compras: Compra[]): string | null {
+  if (compras.length === 0) return null;
+  return compras.reduce((max, c) => (c.fecha > max ? c.fecha : max), compras[0].fecha);
+}
 
 /** Unidades comunes de construcción (RD). */
 export const UNIDADES = [
