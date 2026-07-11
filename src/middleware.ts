@@ -10,15 +10,14 @@ export function middleware(req: NextRequest) {
   const hasSession = Boolean(req.cookies.get(SESSION_COOKIE)?.value);
   const isLogin = pathname === "/login";
 
+  // Sin cookie no se entra a la app (fast path). La validación real de la
+  // firma + usuario activo la hace el layout server-side (getSessionUser);
+  // si la cookie es inválida, el layout redirige a /login. Por eso NO
+  // redirigimos /login → /dashboard aquí (evita bucles con cookies inválidas):
+  // eso lo decide /login server-side solo cuando la sesión es válida.
   if (!hasSession && !isLogin) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
-  }
-
-  if (hasSession && isLogin) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 

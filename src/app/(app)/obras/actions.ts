@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSession } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import {
   createAdminClient,
   isSupabaseConfigured,
@@ -71,7 +71,7 @@ function parseInput(raw: unknown): ProyectoInput | { error: string } {
 }
 
 export async function listProyectos(): Promise<ListResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { configured: false, proyectos: [] };
 
   try {
@@ -103,7 +103,7 @@ export async function listProyectos(): Promise<ListResult> {
 
 /** Obtiene una obra por id (con cliente y etapas) para la página de cronograma. */
 export async function getProyecto(id: string): Promise<Proyecto | null> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured() || !id) return null;
   try {
     const supabase = createAdminClient();
@@ -123,7 +123,7 @@ export async function getProyecto(id: string): Promise<Proyecto | null> {
 
 /** Resumen liviano de obras (id + nombre) para selectores. */
 export async function listObrasResumen(): Promise<{ id: string; nombre: string }[]> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return [];
   try {
     const supabase = createAdminClient();
@@ -139,7 +139,7 @@ export async function listObrasResumen(): Promise<{ id: string; nombre: string }
 }
 
 export async function createProyecto(raw: unknown): Promise<MutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Supabase aún no está configurado." };
   }
@@ -164,7 +164,7 @@ export async function updateProyecto(
   id: string,
   raw: unknown,
 ): Promise<MutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Supabase aún no está configurado." };
   }
@@ -187,7 +187,7 @@ export async function updateProyecto(
 }
 
 export async function deleteProyecto(id: string): Promise<MutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Supabase aún no está configurado." };
   }

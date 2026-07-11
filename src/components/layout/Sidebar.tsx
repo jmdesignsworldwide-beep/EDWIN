@@ -3,24 +3,33 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { LogOut, X } from "lucide-react";
+import { LogOut, X, UserCog } from "lucide-react";
 import { logout } from "@/app/login/actions";
-import { NAV_GROUPS } from "@/lib/navigation";
+import { NAV_GROUPS, type NavGroup } from "@/lib/navigation";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
 
+const ADMIN_GROUP: NavGroup = {
+  title: "Administración",
+  items: [{ label: "Usuarios", href: "/usuarios", icon: UserCog }],
+};
+
 /**
  * Sidebar — grouped module navigation with room for 15+ modules. Desktop:
- * fixed rail. Mobile: slide-in drawer controlled by the Shell.
+ * fixed rail. Mobile: slide-in drawer controlled by the Shell. El grupo de
+ * Administración (Usuarios) solo aparece para el admin.
  */
 export function Sidebar({
   mobileOpen,
   onClose,
+  isAdmin,
 }: {
   mobileOpen: boolean;
   onClose: () => void;
+  isAdmin: boolean;
 }) {
   const pathname = usePathname();
+  const groups = isAdmin ? [...NAV_GROUPS, ADMIN_GROUP] : NAV_GROUPS;
 
   const content = (
     <div className="flex h-full flex-col">
@@ -37,7 +46,7 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
-        {NAV_GROUPS.map((group) => (
+        {groups.map((group) => (
           <div key={group.title}>
             <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-content-subtle">
               {group.title}

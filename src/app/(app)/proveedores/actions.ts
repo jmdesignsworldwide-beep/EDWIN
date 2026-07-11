@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSession } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import {
   createAdminClient,
   isSupabaseConfigured,
@@ -50,7 +50,7 @@ function parse(raw: unknown): ProveedorInput | { error: string } {
 }
 
 export async function listProveedores(): Promise<ProveedoresListResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { configured: false, proveedores: [] };
 
   try {
@@ -76,7 +76,7 @@ export async function listProveedores(): Promise<ProveedoresListResult> {
 }
 
 export async function createProveedor(raw: unknown): Promise<ProveedorMutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
   const parsed = parse(raw);
   if ("error" in parsed) return { ok: false, error: parsed.error };
@@ -101,7 +101,7 @@ export async function updateProveedor(
   id: string,
   raw: unknown,
 ): Promise<ProveedorMutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
   if (!id) return { ok: false, error: "Falta el identificador." };
   const parsed = parse(raw);
@@ -124,7 +124,7 @@ export async function updateProveedor(
 }
 
 export async function deleteProveedor(id: string): Promise<{ ok: boolean; error?: string }> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
   if (!id) return { ok: false, error: "Falta el identificador." };
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSession } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import {
   createAdminClient,
   isSupabaseConfigured,
@@ -41,7 +41,7 @@ export async function createCompra(
   proveedorId: string,
   raw: unknown,
 ): Promise<CompraMutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
   if (!proveedorId) return { ok: false, error: "Falta el proveedor." };
   const parsed = parse(raw);
@@ -65,7 +65,7 @@ export async function updateCompra(
   compraId: string,
   raw: unknown,
 ): Promise<CompraMutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
   if (!proveedorId || !compraId) return { ok: false, error: "Falta identificador." };
   const parsed = parse(raw);
@@ -90,7 +90,7 @@ export async function deleteCompra(
   proveedorId: string,
   compraId: string,
 ): Promise<CompraMutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
   if (!proveedorId || !compraId) return { ok: false, error: "Falta identificador." };
 

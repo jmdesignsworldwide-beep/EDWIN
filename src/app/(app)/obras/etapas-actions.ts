@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSession } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import {
   createAdminClient,
   isSupabaseConfigured,
@@ -86,7 +86,7 @@ export async function createEtapa(
   obraId: string,
   raw: unknown,
 ): Promise<EtapaMutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
   if (!obraId) return { ok: false, error: "Falta la obra." };
   const parsed = parse(raw);
@@ -115,7 +115,7 @@ export async function updateEtapa(
   etapaId: string,
   raw: unknown,
 ): Promise<EtapaMutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
   if (!obraId || !etapaId) return { ok: false, error: "Falta identificador." };
   const parsed = parse(raw);
@@ -141,7 +141,7 @@ export async function deleteEtapa(
   obraId: string,
   etapaId: string,
 ): Promise<EtapaMutationResult> {
-  requireSession();
+  await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
   if (!obraId || !etapaId) return { ok: false, error: "Falta identificador." };
 

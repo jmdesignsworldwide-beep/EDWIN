@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/auth";
 import { LoginForm } from "@/components/login/LoginForm";
 import { Logo } from "@/components/layout/Logo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -8,7 +10,13 @@ export const metadata: Metadata = {
   title: "Ingresar",
 };
 
-export default function LoginPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LoginPage() {
+  // Solo con sesión VÁLIDA se salta al panel (evita bucles con cookies inválidas).
+  const user = await getSessionUser();
+  if (user) redirect("/dashboard");
+
   return (
     <div className="relative flex min-h-screen flex-col">
       <header className="flex items-center justify-between px-5 py-5 sm:px-8">
