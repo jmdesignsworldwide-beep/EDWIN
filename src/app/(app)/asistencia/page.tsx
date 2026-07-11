@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
-import { ClipboardCheck } from "lucide-react";
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
+import { listObrasResumen } from "../obras/actions";
+import { isSupabaseConfigured } from "@/lib/supabase/server";
+import { AsistenciaPicker } from "./AsistenciaPicker";
 
 export const metadata: Metadata = { title: "Asistencia" };
 
-export default function AsistenciaPage() {
-  return (
-    <PlaceholderPage
-      title="Asistencia"
-      subtitle="Registro de asistencia"
-      icon={ClipboardCheck}
-    />
-  );
+export const dynamic = "force-dynamic";
+
+export default async function AsistenciaPage() {
+  const obras = await listObrasResumen();
+  return <AsistenciaPicker obras={obras} configured={isSupabaseConfigured()} />;
 }

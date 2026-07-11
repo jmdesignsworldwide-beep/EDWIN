@@ -41,12 +41,11 @@ export default async function ObraDetailPage({
     );
   }
 
+  const vista = searchParams?.vista;
   const initialTab =
-    searchParams?.vista === "materiales"
-      ? "materiales"
-      : searchParams?.vista === "equipo"
-        ? "equipo"
-        : "cronograma";
+    vista === "materiales" || vista === "equipo" || vista === "asistencia"
+      ? vista
+      : "cronograma";
   return (
     <ObraWorkspace
       proyecto={proyecto}

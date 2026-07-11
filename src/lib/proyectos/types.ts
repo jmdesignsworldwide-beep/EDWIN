@@ -220,6 +220,75 @@ export const CATEGORIAS_PROVEEDOR = [
   "Otros",
 ];
 
+export type EstadoAsistencia = "presente" | "ausente" | "medio";
+
+export type Asistencia = {
+  id: string;
+  persona_id: string;
+  obra_id: string;
+  fecha: string;
+  estado: EstadoAsistencia;
+  horas: number | null;
+  hora_entrada: string | null;
+  hora_salida: string | null;
+  notas: string | null;
+};
+
+/** Fila del pase de lista: persona asignada + su asistencia del día (si hay). */
+export type PaseListaRow = {
+  persona: {
+    id: string;
+    nombre: string;
+    oficio: string | null;
+    telefono: string | null;
+    activo: boolean;
+  };
+  rol_en_obra: string | null;
+  asistencia: Asistencia | null;
+};
+
+export const ESTADOS_ASISTENCIA: {
+  value: EstadoAsistencia;
+  label: string;
+  corto: string;
+}[] = [
+  { value: "presente", label: "Presente", corto: "P" },
+  { value: "medio", label: "Medio día", corto: "½" },
+  { value: "ausente", label: "Ausente", corto: "A" },
+];
+
+/** Clases por estado. Contraste verificado en ambos temas. `on` = seleccionado. */
+export const ESTADO_ASISTENCIA_UI: Record<
+  EstadoAsistencia,
+  { on: string; dot: string; text: string }
+> = {
+  presente: {
+    on: "bg-emerald-500 text-white border-emerald-500",
+    dot: "bg-emerald-500",
+    text: "text-emerald-700 dark:text-emerald-300",
+  },
+  medio: {
+    on: "bg-amber-500 text-white border-amber-500",
+    dot: "bg-amber-500",
+    text: "text-amber-700 dark:text-amber-300",
+  },
+  ausente: {
+    on: "bg-rose-500 text-white border-rose-500",
+    dot: "bg-rose-500",
+    text: "text-rose-700 dark:text-rose-300",
+  },
+};
+
+/** Días trabajados: presente=1, medio=0.5, ausente=0. */
+export function diasTrabajados(
+  registros: { estado: EstadoAsistencia }[],
+): number {
+  return registros.reduce(
+    (acc, r) => acc + (r.estado === "presente" ? 1 : r.estado === "medio" ? 0.5 : 0),
+    0,
+  );
+}
+
 export type JornalTipo = "dia" | "semana" | "hora";
 
 export type Persona = {
