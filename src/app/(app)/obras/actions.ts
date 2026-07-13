@@ -41,7 +41,8 @@ function parseInput(raw: unknown): ProyectoInput | { error: string } {
   if (!nombre) return { error: "El nombre de la obra es obligatorio." };
   if (nombre.length > 160) return { error: "El nombre es demasiado largo." };
 
-  const estado = String(d.estado ?? "planificacion") as EstadoObra;
+  // El estado ya no se elige en el alta; una obra nueva nace activa (en curso).
+  const estado = String(d.estado ?? "en_curso") as EstadoObra;
   if (!ESTADOS_VALIDOS.includes(estado)) return { error: "Estado inválido." };
 
   let presupuesto: number | null = null;
@@ -183,6 +184,31 @@ export async function updateProyecto(
     return { ok: true };
   } catch {
     return { ok: false, error: "No se pudo guardar los cambios." };
+  }
+}
+
+/**
+ * Cambia el estado de una obra (seguimiento). Se usa para marcar Terminada o
+ * reactivarla — acción clara y reversible, sin pasar por el formulario.
+ */
+export async function setEstadoObra(
+  id: string,
+  estado: EstadoObra,
+): Promise<MutationResult> {
+  await requireUser();
+  if (!isSupabaseConfigured()) return { ok: false, error: "Supabase aún no está configurado." };
+  if (!id) return { ok: false, error: "Falta el identificador de la obra." };
+  if (!ESTADOS_VALIDOS.includes(estado)) return { ok: false, error: "Estado inválido." };
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase.from("proyectos").update({ estado }).eq("id", id);
+    if (error) throw error;
+    revalidatePath("/obras");
+    revalidatePath(`/obras/${id}`);
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "No se pudo actualizar el estado." };
   }
 }
 

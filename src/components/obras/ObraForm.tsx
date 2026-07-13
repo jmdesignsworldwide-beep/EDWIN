@@ -4,12 +4,10 @@ import { useState, useTransition, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/primitives";
 import {
-  ESTADOS,
   UBICACIONES_RD,
   type Cliente,
   type Proyecto,
   type ProyectoInput,
-  type EstadoObra,
 } from "@/lib/proyectos/types";
 import { createProyecto, updateProyecto } from "@/app/(app)/obras/actions";
 import { ClienteSelect } from "./ClienteSelect";
@@ -40,7 +38,9 @@ export function ObraForm({
     nombre: proyecto?.nombre ?? "",
     ubicacion: proyecto?.ubicacion ?? "",
     cliente_id: proyecto?.cliente_id ?? null,
-    estado: proyecto?.estado ?? "planificacion",
+    // El estado no se edita aquí (se maneja como seguimiento con el botón
+    // "Terminada"); se conserva el actual para no reiniciarlo al guardar.
+    estado: proyecto?.estado ?? "en_curso",
     fecha_inicio: proyecto?.fecha_inicio ?? "",
     fecha_fin_estimada: proyecto?.fecha_fin_estimada ?? "",
     presupuesto: proyecto?.presupuesto ?? null,
@@ -90,37 +90,21 @@ export function ObraForm({
           />
         </Field>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Ubicación">
-            <input
-              type="text"
-              list="ubicaciones-rd"
-              value={form.ubicacion ?? ""}
-              onChange={(e) => set("ubicacion", e.target.value)}
-              placeholder="Provincia o ciudad"
-              className={inputCls}
-            />
-            <datalist id="ubicaciones-rd">
-              {UBICACIONES_RD.map((u) => (
-                <option key={u} value={u} />
-              ))}
-            </datalist>
-          </Field>
-
-          <Field label="Estado">
-            <select
-              value={form.estado}
-              onChange={(e) => set("estado", e.target.value as EstadoObra)}
-              className={cn(inputCls, "appearance-none")}
-            >
-              {ESTADOS.map((e) => (
-                <option key={e.value} value={e.value}>
-                  {e.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
+        <Field label="Ubicación">
+          <input
+            type="text"
+            list="ubicaciones-rd"
+            value={form.ubicacion ?? ""}
+            onChange={(e) => set("ubicacion", e.target.value)}
+            placeholder="Provincia o ciudad"
+            className={inputCls}
+          />
+          <datalist id="ubicaciones-rd">
+            {UBICACIONES_RD.map((u) => (
+              <option key={u} value={u} />
+            ))}
+          </datalist>
+        </Field>
 
         <Field label="Cliente / propietario">
           <ClienteSelect

@@ -82,6 +82,24 @@ export async function listPersonal(): Promise<PersonalListResult> {
   }
 }
 
+/** Una persona por id (con sus asignaciones a obras) para su expediente. */
+export async function getPersona(id: string): Promise<Persona | null> {
+  await requireUser();
+  if (!isSupabaseConfigured() || !id) return null;
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("personal")
+      .select(SELECT)
+      .eq("id", id)
+      .single();
+    if (error || !data) return null;
+    return { ...(data as any), obras: (data as any).obras ?? [] } as Persona;
+  } catch {
+    return null;
+  }
+}
+
 export async function createPersona(raw: unknown): Promise<PersonaMutationResult> {
   await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };

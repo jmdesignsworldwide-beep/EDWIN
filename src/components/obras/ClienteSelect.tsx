@@ -2,9 +2,9 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronDown, Search, UserPlus, Check, Loader2, X } from "lucide-react";
+import { ChevronDown, Search, UserPlus, Check, Loader2, X, User, Building2 } from "lucide-react";
 import { createCliente } from "@/app/(app)/obras/clientes-actions";
-import type { Cliente } from "@/lib/proyectos/types";
+import type { Cliente, ClienteTipo } from "@/lib/proyectos/types";
 import { cn } from "@/lib/utils";
 
 /**
@@ -170,6 +170,7 @@ function QuickAdd({
   onCreated: (c: Cliente) => void;
   onCancel: () => void;
 }) {
+  const [tipo, setTipo] = useState<ClienteTipo>("persona");
   const [nombre, setNombre] = useState(initialNombre);
   const [telefono, setTelefono] = useState("");
   const [cedula, setCedula] = useState("");
@@ -179,12 +180,13 @@ function QuickAdd({
   function guardar() {
     setError(null);
     if (!nombre.trim()) {
-      setError("El nombre es obligatorio.");
+      setError(tipo === "empresa" ? "La razón social es obligatoria." : "El nombre es obligatorio.");
       return;
     }
     start(async () => {
       const res = await createCliente({
         nombre,
+        tipo,
         telefono: telefono || null,
         cedula_rnc: cedula || null,
       });
@@ -209,11 +211,30 @@ function QuickAdd({
           <X className="h-4 w-4" />
         </button>
       </div>
+      <div className="inline-flex w-full overflow-hidden rounded-lg border border-line">
+        {(["persona", "empresa"] as ClienteTipo[]).map((t) => {
+          const Icon = t === "empresa" ? Building2 : User;
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTipo(t)}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-semibold transition-colors",
+                tipo === t ? "bg-brand-gradient text-brand-ink" : "bg-surface text-content-muted hover:bg-surface-2",
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {t === "empresa" ? "Empresa" : "Persona"}
+            </button>
+          );
+        })}
+      </div>
       <input
         type="text"
         value={nombre}
         onChange={(e) => setNombre(e.target.value)}
-        placeholder="Nombre *"
+        placeholder={tipo === "empresa" ? "Razón social *" : "Nombre *"}
         className={inp}
       />
       <input
@@ -227,7 +248,7 @@ function QuickAdd({
         type="text"
         value={cedula}
         onChange={(e) => setCedula(e.target.value)}
-        placeholder="Cédula (000-0000000-0) o RNC"
+        placeholder={tipo === "empresa" ? "RNC (9 dígitos)" : "Cédula (000-0000000-0)"}
         className={inp}
       />
       {error && <p className="text-xs font-medium text-danger">{error}</p>}

@@ -4,7 +4,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import { Loader2, Wand2 } from "lucide-react";
 import { Button } from "@/components/primitives";
 import { createUsuario } from "@/app/(app)/usuarios/actions";
-import { cn } from "@/lib/utils";
+import { Select } from "@/components/ui/Select";
 
 /** UsuarioForm — alta de usuario (solo admin). Contraseña inicial obligatoria;
  *  el usuario deberá cambiarla en su primer ingreso. */
@@ -73,10 +73,15 @@ export function UsuarioForm({
           </p>
         </Field>
         <Field label="Rol">
-          <select value={rol} onChange={(e) => setRol(e.target.value as "usuario" | "admin")} className={cn(inp, "appearance-none")}>
-            <option value="usuario">Usuario</option>
-            <option value="admin">Administrador</option>
-          </select>
+          <Select
+            value={rol}
+            onChange={(v) => setRol(v as "usuario" | "admin")}
+            ariaLabel="Rol"
+            options={[
+              { value: "usuario", label: "Usuario" },
+              { value: "admin", label: "Administrador" },
+            ]}
+          />
         </Field>
 
         {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-xs font-medium text-danger">{error}</p>}

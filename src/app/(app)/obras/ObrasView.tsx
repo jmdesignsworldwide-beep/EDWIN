@@ -1,29 +1,18 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { HardHat, Plus, Database, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import {
-  Reveal,
-  Stagger,
-  Button,
-  EmptyState,
-} from "@/components/primitives";
-import { SlideOver } from "@/components/ui/SlideOver";
+import { Reveal, Stagger, Button, EmptyState } from "@/components/primitives";
 import { Modal } from "@/components/ui/Modal";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ObraCard } from "@/components/obras/ObraCard";
 import { ObraForm } from "@/components/obras/ObraForm";
-import { ObraDetail } from "@/components/obras/ObraDetail";
-import { deleteProyecto } from "./actions";
+import { setEstadoObra } from "./actions";
+import { cn } from "@/lib/utils";
 import type { Cliente, Proyecto } from "@/lib/proyectos/types";
 
-type PanelState =
-  | { type: "closed" }
-  | { type: "create" }
-  | { type: "edit"; proyecto: Proyecto }
-  | { type: "detail"; proyecto: Proyecto };
+type Filtro = "activas" | "terminadas" | "todas";
 
 export function ObrasView({
   proyectos,
@@ -37,40 +26,45 @@ export function ObrasView({
   loadError?: string;
 }) {
   const router = useRouter();
-  const [panel, setPanel] = useState<PanelState>({ type: "closed" });
-  const [toDelete, setToDelete] = useState<Proyecto | null>(null);
-  const [deleting, startDelete] = useTransition();
+  const [creating, setCreating] = useState(false);
+  const [filtro, setFiltro] = useState<Filtro>("activas");
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [, start] = useTransition();
 
-  const close = () => setPanel({ type: "closed" });
-  const refreshAndClose = () => {
-    close();
-    router.refresh();
-  };
+  const counts = useMemo(() => {
+    let activas = 0;
+    let terminadas = 0;
+    for (const p of proyectos) {
+      if (p.estado === "terminada") terminadas++;
+      else activas++;
+    }
+    return { activas, terminadas, todas: proyectos.length };
+  }, [proyectos]);
 
-  function confirmDelete() {
-    if (!toDelete) return;
-    startDelete(async () => {
-      const res = await deleteProyecto(toDelete.id);
-      if (res.ok) {
-        setToDelete(null);
-        close();
-        router.refresh();
-      }
+  const visibles = useMemo(() => {
+    if (filtro === "todas") return proyectos;
+    if (filtro === "terminadas") return proyectos.filter((p) => p.estado === "terminada");
+    return proyectos.filter((p) => p.estado !== "terminada");
+  }, [proyectos, filtro]);
+
+  function toggleEstado(p: Proyecto) {
+    setBusyId(p.id);
+    start(async () => {
+      const nuevo = p.estado === "terminada" ? "en_curso" : "terminada";
+      await setEstadoObra(p.id, nuevo);
+      setBusyId(null);
+      router.refresh();
     });
   }
-
-  const hasObras = proyectos.length > 0;
 
   return (
     <>
       <PageHeader
         title="Obras"
-        subtitle="Proyectos y obras en ejecución de la constructora"
+        subtitle="Proyectos y obras de la constructora"
         action={
           configured ? (
-            <Button icon={Plus} onClick={() => setPanel({ type: "create" })}>
-              Agregar obra
-            </Button>
+            <Button icon={Plus} onClick={() => setCreating(true)}>Agregar obra</Button>
           ) : undefined
         }
       />
@@ -89,6 +83,20 @@ export function ObrasView({
         </div>
       )}
 
+      {configured && proyectos.length > 0 && (
+        <div className="mb-5 inline-flex rounded-xl border border-line bg-surface/60 p-1">
+          <FiltroBtn active={filtro === "activas"} onClick={() => setFiltro("activas")}>
+            Activas <span className="opacity-60">{counts.activas}</span>
+          </FiltroBtn>
+          <FiltroBtn active={filtro === "terminadas"} onClick={() => setFiltro("terminadas")}>
+            Terminadas <span className="opacity-60">{counts.terminadas}</span>
+          </FiltroBtn>
+          <FiltroBtn active={filtro === "todas"} onClick={() => setFiltro("todas")}>
+            Todas <span className="opacity-60">{counts.todas}</span>
+          </FiltroBtn>
+        </div>
+      )}
+
       {!configured ? (
         <Reveal standalone>
           <div className="rounded-2xl border border-line bg-surface/50 shadow-card">
@@ -100,18 +108,7 @@ export function ObrasView({
             />
           </div>
         </Reveal>
-      ) : hasObras ? (
-        <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {proyectos.map((p) => (
-            <Reveal key={p.id}>
-              <ObraCard
-                proyecto={p}
-                onClick={() => setPanel({ type: "detail", proyecto: p })}
-              />
-            </Reveal>
-          ))}
-        </Stagger>
-      ) : (
+      ) : proyectos.length === 0 ? (
         <Reveal standalone>
           <div className="rounded-2xl border border-line bg-surface/50 shadow-card">
             <EmptyState
@@ -120,69 +117,75 @@ export function ObrasView({
               description="Agrega tu primera obra y aparecerá aquí con su avance, ubicación y equipo. Empieza registrando una."
               actionLabel="Agregar obra"
               actionIcon={Plus}
-              onAction={() => setPanel({ type: "create" })}
+              onAction={() => setCreating(true)}
             />
           </div>
         </Reveal>
+      ) : visibles.length === 0 ? (
+        <Reveal standalone>
+          <div className="rounded-2xl border border-line bg-surface/50 shadow-card">
+            <EmptyState
+              icon={HardHat}
+              title={filtro === "terminadas" ? "Sin obras terminadas" : "Sin obras activas"}
+              description={
+                filtro === "terminadas"
+                  ? "Cuando marques una obra como terminada, quedará archivada aquí con su expediente."
+                  : "Todas las obras están terminadas. Cambia el filtro para verlas."
+              }
+              size="sm"
+            />
+          </div>
+        </Reveal>
+      ) : (
+        <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {visibles.map((p) => (
+            <Reveal key={p.id}>
+              <ObraCard
+                proyecto={p}
+                onOpen={() => router.push(`/obras/${p.id}`)}
+                onToggleEstado={() => toggleEstado(p)}
+                busy={busyId === p.id}
+              />
+            </Reveal>
+          ))}
+        </Stagger>
       )}
 
-      {/* Modal crear (centrado) */}
       <Modal
-        open={panel.type === "create"}
-        onClose={close}
+        open={creating}
+        onClose={() => setCreating(false)}
         title="Nueva obra"
         subtitle="Registra una obra de la constructora"
       >
-        <ObraForm clientes={clientes} onSaved={refreshAndClose} onCancel={close} />
+        <ObraForm
+          clientes={clientes}
+          onSaved={() => { setCreating(false); router.refresh(); }}
+          onCancel={() => setCreating(false)}
+        />
       </Modal>
-
-      {/* Modal editar (centrado) */}
-      <Modal
-        open={panel.type === "edit"}
-        onClose={close}
-        title="Editar obra"
-        subtitle={panel.type === "edit" ? panel.proyecto.nombre : undefined}
-      >
-        {panel.type === "edit" && (
-          <ObraForm
-            proyecto={panel.proyecto}
-            clientes={clientes}
-            onSaved={refreshAndClose}
-            onCancel={close}
-          />
-        )}
-      </Modal>
-
-      {/* Panel detalle */}
-      <SlideOver
-        open={panel.type === "detail"}
-        onClose={close}
-        title={panel.type === "detail" ? panel.proyecto.nombre : "Detalle"}
-        subtitle={panel.type === "detail" ? panel.proyecto.ubicacion ?? undefined : undefined}
-        widthClass="max-w-lg"
-      >
-        {panel.type === "detail" && (
-          <ObraDetail
-            proyecto={panel.proyecto}
-            onEdit={() => setPanel({ type: "edit", proyecto: panel.proyecto })}
-            onDelete={() => setToDelete(panel.proyecto)}
-          />
-        )}
-      </SlideOver>
-
-      {/* Confirmar borrado */}
-      <ConfirmDialog
-        open={Boolean(toDelete)}
-        title="Eliminar obra"
-        description={
-          toDelete
-            ? `Se eliminará "${toDelete.nombre}" de forma permanente. Esta acción no se puede deshacer.`
-            : ""
-        }
-        loading={deleting}
-        onConfirm={confirmDelete}
-        onCancel={() => setToDelete(null)}
-      />
     </>
+  );
+}
+
+function FiltroBtn({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
+        active ? "bg-brand-gradient text-brand-ink shadow-glow" : "text-content-muted hover:text-content",
+      )}
+    >
+      {children}
+    </button>
   );
 }

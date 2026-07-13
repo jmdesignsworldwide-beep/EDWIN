@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
-import { UserSquare2 } from "lucide-react";
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
+import { listClientes } from "./actions";
+import { ClientesView } from "./ClientesView";
 
 export const metadata: Metadata = { title: "Clientes" };
 
-export default function ClientesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ClientesPage() {
+  const { clientes, incompletos, configured, error } = await listClientes();
   return (
-    <PlaceholderPage
-      title="Clientes"
-      subtitle="Directorio de clientes"
-      icon={UserSquare2}
+    <ClientesView
+      clientes={clientes}
+      incompletos={incompletos}
+      configured={configured}
+      loadError={error}
     />
   );
 }

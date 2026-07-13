@@ -5,57 +5,29 @@ import { useRouter } from "next/navigation";
 import { Users, Plus, Database, RefreshCw, Briefcase, HardHat, Phone } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Reveal, Stagger, Button, EmptyState, MagneticCard } from "@/components/primitives";
-import { SlideOver } from "@/components/ui/SlideOver";
 import { Modal } from "@/components/ui/Modal";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { PersonaForm } from "@/components/personal/PersonaForm";
-import { PersonaDetail } from "@/components/personal/PersonaDetail";
-import { deletePersona } from "./actions";
 import type { Persona } from "@/lib/proyectos/types";
 import { cn } from "@/lib/utils";
 
-type FormPanel = { type: "closed" } | { type: "create" } | { type: "edit"; persona: Persona };
-
 export function PersonalView({
   personal,
-  obras,
   configured,
   loadError,
-  initialPersonaId,
 }: {
   personal: Persona[];
-  obras: { id: string; nombre: string }[];
   configured: boolean;
   loadError?: string;
-  initialPersonaId?: string;
 }) {
   const router = useRouter();
-  const [selectedId, setSelectedId] = useState<string | null>(initialPersonaId ?? null);
-  const [form, setForm] = useState<FormPanel>({ type: "closed" });
-  const [toDelete, setToDelete] = useState<Persona | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const selected = personal.find((p) => p.id === selectedId) ?? null;
-  const closeForm = () => setForm({ type: "closed" });
-
-  async function confirmDelete() {
-    if (!toDelete) return;
-    setDeleting(true);
-    const res = await deletePersona(toDelete.id);
-    setDeleting(false);
-    if (res.ok) {
-      if (selectedId === toDelete.id) setSelectedId(null);
-      setToDelete(null);
-      router.refresh();
-    }
-  }
+  const [creating, setCreating] = useState(false);
 
   return (
     <>
       <PageHeader
         title="Personal"
         subtitle="Directorio de personal y cuadrillas"
-        action={configured ? <Button icon={Plus} onClick={() => setForm({ type: "create" })}>Agregar persona</Button> : undefined}
+        action={configured ? <Button icon={Plus} onClick={() => setCreating(true)}>Agregar persona</Button> : undefined}
       />
 
       {loadError && (
@@ -82,7 +54,7 @@ export function PersonalView({
               description="Registra a tu primera persona (maestro, ayudante, plomero…) y asígnala a las obras."
               actionLabel="Agregar persona"
               actionIcon={Plus}
-              onAction={() => setForm({ type: "create" })}
+              onAction={() => setCreating(true)}
             />
           </div>
         </Reveal>
@@ -93,7 +65,7 @@ export function PersonalView({
             return (
               <Reveal key={p.id}>
                 <MagneticCard className="cursor-pointer p-5" intensity={4}>
-                  <button type="button" onClick={() => setSelectedId(p.id)} className="flex w-full flex-col text-left focus:outline-none" aria-label={`Ver ${p.nombre}`}>
+                  <button type="button" onClick={() => router.push(`/personal/${p.id}`)} className="flex w-full flex-col text-left focus:outline-none" aria-label={`Abrir expediente de ${p.nombre}`}>
                     <div className="flex items-start justify-between gap-3">
                       <h3 className="min-w-0 flex-1 truncate text-base font-semibold text-content">{p.nombre}</h3>
                       <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset", p.activo ? "bg-emerald-500/12 text-emerald-700 ring-emerald-500/25 dark:text-emerald-300" : "bg-slate-500/12 text-slate-600 ring-slate-500/25 dark:text-slate-300")}>
@@ -118,27 +90,9 @@ export function PersonalView({
         </Stagger>
       )}
 
-      <SlideOver open={Boolean(selected)} onClose={() => setSelectedId(null)} title={selected?.nombre ?? "Persona"} subtitle={selected?.oficio ?? undefined} widthClass="max-w-lg">
-        {selected && (
-          <PersonaDetail persona={selected} obras={obras} onEdit={() => setForm({ type: "edit", persona: selected })} onDelete={() => setToDelete(selected)} />
-        )}
-      </SlideOver>
-
-      <Modal open={form.type === "create"} onClose={closeForm} title="Nueva persona" subtitle="Directorio de personal">
-        <PersonaForm onSaved={() => { closeForm(); router.refresh(); }} onCancel={closeForm} />
+      <Modal open={creating} onClose={() => setCreating(false)} title="Nueva persona" subtitle="Directorio de personal">
+        <PersonaForm onSaved={() => { setCreating(false); router.refresh(); }} onCancel={() => setCreating(false)} />
       </Modal>
-      <Modal open={form.type === "edit"} onClose={closeForm} title="Editar persona" subtitle={form.type === "edit" ? form.persona.nombre : undefined}>
-        {form.type === "edit" && <PersonaForm persona={form.persona} onSaved={() => { closeForm(); router.refresh(); }} onCancel={closeForm} />}
-      </Modal>
-
-      <ConfirmDialog
-        open={Boolean(toDelete)}
-        title="Eliminar persona"
-        description={toDelete ? `Se eliminará a "${toDelete.nombre}" y sus asignaciones a obras.` : ""}
-        loading={deleting}
-        onConfirm={confirmDelete}
-        onCancel={() => setToDelete(null)}
-      />
     </>
   );
 }

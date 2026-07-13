@@ -19,21 +19,88 @@ export type Usuario = {
   created_at: string;
 };
 
+export type ClienteTipo = "persona" | "empresa";
+
 export type Cliente = {
   id: string;
+  /** Nombre visible: persona → nombre completo; empresa → razón social. */
   nombre: string;
+  tipo: ClienteTipo;
   telefono: string | null;
+  /** Cédula (persona) o RNC (empresa) según el tipo. */
   cedula_rnc: string | null;
+  email: string | null;
+  direccion: string | null;
+  /** Persona de contacto dentro de la empresa. */
+  contacto_nombre: string | null;
+  contacto_telefono: string | null;
+  /** false = creado por quick-add, faltan datos por completar. */
+  datos_completos: boolean;
   created_at: string;
   updated_at: string;
 };
 
-/** Datos cortos del quick-add de cliente. */
+/** Datos del formulario de cliente (completo o quick-add). */
 export type ClienteInput = {
   nombre: string;
+  tipo: ClienteTipo;
   telefono: string | null;
   cedula_rnc: string | null;
+  email: string | null;
+  direccion: string | null;
+  contacto_nombre: string | null;
+  contacto_telefono: string | null;
 };
+
+export const TIPOS_CLIENTE: { value: ClienteTipo; label: string }[] = [
+  { value: "persona", label: "Persona" },
+  { value: "empresa", label: "Empresa" },
+];
+
+export const CLIENTE_TIPO_LABEL: Record<ClienteTipo, string> = {
+  persona: "Persona",
+  empresa: "Empresa",
+};
+
+/** Badge por tipo de cliente. Contraste verificado en ambos temas. */
+export const CLIENTE_TIPO_BADGE: Record<
+  ClienteTipo,
+  { badge: string; label: string }
+> = {
+  persona: {
+    badge:
+      "bg-sky-500/12 text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/25",
+    label: "Persona",
+  },
+  empresa: {
+    badge:
+      "bg-violet-500/12 text-violet-700 dark:text-violet-300 ring-1 ring-inset ring-violet-500/25",
+    label: "Empresa",
+  },
+};
+
+/** Etiqueta del documento según el tipo (cédula para persona, RNC para empresa). */
+export function documentoLabel(tipo: ClienteTipo): string {
+  return tipo === "empresa" ? "RNC" : "Cédula";
+}
+
+/**
+ * Un cliente está "completo" cuando tiene los datos clave de su tipo:
+ * nombre, teléfono y documento; y para empresa, además persona de contacto.
+ */
+export function clienteCompleto(c: {
+  tipo: ClienteTipo;
+  nombre: string | null;
+  telefono: string | null;
+  cedula_rnc: string | null;
+  contacto_nombre?: string | null;
+}): boolean {
+  if (!c.nombre?.trim()) return false;
+  if (!c.telefono?.trim()) return false;
+  if (!c.cedula_rnc?.trim()) return false;
+  if (c.tipo === "empresa" && !c.contacto_nombre?.trim()) return false;
+  return true;
+}
 
 export type EstadoEtapa = "pendiente" | "en_curso" | "completada" | "retrasada";
 
@@ -485,6 +552,108 @@ export const NOMINA_ESTADO_BADGE: Record<
   },
 };
 
+// ── Bloque 2 · Pagos/entregas y notas del empleado ───────────
+
+export type PagoTipo = "adelanto" | "pago" | "entrega" | "otro";
+
+export type PagoEmpleado = {
+  id: string;
+  persona_id: string;
+  tipo: PagoTipo;
+  monto: number;
+  concepto: string | null;
+  fecha: string;
+  origen: "manual" | "nomina";
+  saldado: boolean;
+  nomina_id: string | null;
+  notas: string | null;
+  created_at: string;
+};
+
+export type PagoInput = {
+  tipo: PagoTipo;
+  monto: number;
+  concepto: string | null;
+  fecha: string;
+  notas: string | null;
+};
+
+export const PAGO_TIPOS: { value: PagoTipo; label: string }[] = [
+  { value: "adelanto", label: "Adelanto" },
+  { value: "pago", label: "Pago" },
+  { value: "entrega", label: "Entrega" },
+  { value: "otro", label: "Otro" },
+];
+
+export const PAGO_TIPO_LABEL: Record<PagoTipo, string> = {
+  adelanto: "Adelanto",
+  pago: "Pago",
+  entrega: "Entrega",
+  otro: "Otro",
+};
+
+/** Badge por tipo de pago. Contraste verificado en ambos temas. */
+export const PAGO_TIPO_BADGE: Record<PagoTipo, string> = {
+  adelanto: "bg-amber-500/12 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/25",
+  pago: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/25",
+  entrega: "bg-sky-500/12 text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/25",
+  otro: "bg-slate-500/12 text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-500/25",
+};
+
+export type NotaTipo = "positiva" | "negativa" | "neutral";
+
+export type NotaEmpleado = {
+  id: string;
+  persona_id: string;
+  nota: string;
+  tipo: NotaTipo;
+  fecha: string;
+  created_at: string;
+};
+
+export const NOTA_TIPOS: { value: NotaTipo; label: string }[] = [
+  { value: "positiva", label: "Positiva" },
+  { value: "negativa", label: "A mejorar" },
+  { value: "neutral", label: "Neutral" },
+];
+
+export const NOTA_TIPO_BADGE: Record<NotaTipo, { badge: string; label: string; dot: string }> = {
+  positiva: {
+    badge: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/25",
+    label: "Positiva",
+    dot: "bg-emerald-500",
+  },
+  negativa: {
+    badge: "bg-rose-500/12 text-rose-700 dark:text-rose-300 ring-1 ring-inset ring-rose-500/25",
+    label: "A mejorar",
+    dot: "bg-rose-500",
+  },
+  neutral: {
+    badge: "bg-slate-500/12 text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-500/25",
+    label: "Neutral",
+    dot: "bg-slate-500",
+  },
+};
+
+/** Total entregado (suma de todos los pagos/entregas). */
+export function totalEntregado(pagos: { monto: number }[]): number {
+  return round2(pagos.reduce((acc, p) => acc + (p.monto ?? 0), 0));
+}
+
+/** Adelantos pendientes (aún no saldados en nómina). Base para el Bloque 4. */
+export function adelantosPendientes(
+  pagos: { tipo: PagoTipo; saldado: boolean; monto: number }[],
+): number {
+  return round2(
+    pagos
+      .filter((p) => p.tipo === "adelanto" && !p.saldado)
+      .reduce((acc, p) => acc + (p.monto ?? 0), 0),
+  );
+}
+
+/** Categorías de opciones de selector inteligente (claves en opciones_selector). */
+export type CategoriaOpcion = "proveedor_categoria" | "oficio" | "unidad_material";
+
 /** Enlace de WhatsApp para un teléfono dominicano (+1). Null si no hay número. */
 export function whatsappLink(telefono: string | null): string | null {
   if (!telefono) return null;
@@ -635,6 +804,30 @@ export function normalizarCedulaRnc(
     ok: false,
     error: "Cédula (11 dígitos) o RNC (9 dígitos) inválido.",
   };
+}
+
+/**
+ * Valida el documento según el tipo de cliente: persona → cédula (11 dígitos),
+ * empresa → RNC (9 dígitos). Vacío es válido (queda como dato por completar).
+ */
+export function normalizarDocumento(
+  raw: string,
+  tipo: ClienteTipo,
+): { ok: true; value: string | null } | { ok: false; error: string } {
+  const s = raw.trim();
+  if (s === "") return { ok: true, value: null };
+  const digits = s.replace(/\D/g, "");
+  if (tipo === "empresa") {
+    if (digits.length === 9) return { ok: true, value: digits };
+    return { ok: false, error: "El RNC debe tener 9 dígitos." };
+  }
+  if (digits.length === 11) {
+    return {
+      ok: true,
+      value: `${digits.slice(0, 3)}-${digits.slice(3, 10)}-${digits.slice(10)}`,
+    };
+  }
+  return { ok: false, error: "La cédula debe tener 11 dígitos (000-0000000-0)." };
 }
 
 export const ESTADOS: { value: EstadoObra; label: string }[] = [

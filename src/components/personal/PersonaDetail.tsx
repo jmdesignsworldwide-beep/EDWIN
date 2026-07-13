@@ -24,6 +24,7 @@ import {
   type Persona,
 } from "@/lib/proyectos/types";
 import { AsistenciaConsolidado } from "./AsistenciaConsolidado";
+import { Select } from "@/components/ui/Select";
 import { formatCurrency, cn } from "@/lib/utils";
 import {
   asignarPersonaObra,
@@ -168,10 +169,15 @@ export function PersonaDetail({
           {disponibles.length > 0 ? (
             <div className="rounded-xl border border-line bg-surface-2/40 p-2.5">
               <div className="flex flex-col gap-2 sm:flex-row">
-                <select value={nuevaObra} onChange={(e) => setNuevaObra(e.target.value)} className={cn(mini, "flex-1 appearance-none")}>
-                  <option value="">Asignar a una obra…</option>
-                  {disponibles.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
-                </select>
+                <div className="flex-1">
+                  <Select
+                    value={nuevaObra || null}
+                    onChange={(v) => setNuevaObra(v)}
+                    placeholder="Asignar a una obra…"
+                    ariaLabel="Asignar a una obra"
+                    options={disponibles.map((o) => ({ value: o.id, label: o.nombre }))}
+                  />
+                </div>
                 <input type="text" value={rol} onChange={(e) => setRol(e.target.value)} placeholder="Rol (opcional)" className={cn(mini, "sm:w-36")} />
                 <button type="button" onClick={asignar} disabled={busy || !nuevaObra} className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-brand-gradient px-3 text-xs font-semibold text-brand-ink transition-transform hover:scale-[1.02] disabled:opacity-50">
                   <Plus className="h-3.5 w-3.5" />Asignar

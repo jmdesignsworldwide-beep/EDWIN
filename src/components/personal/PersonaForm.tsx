@@ -11,6 +11,8 @@ import {
   type PersonaInput,
 } from "@/lib/proyectos/types";
 import { createPersona, updatePersona } from "@/app/(app)/personal/actions";
+import { Select } from "@/components/ui/Select";
+import { SmartSelect } from "@/components/ui/SmartSelect";
 import { cn } from "@/lib/utils";
 
 /** PersonaForm — alta/edición de una persona. Jornal es dato sensible (server-only). */
@@ -65,14 +67,25 @@ export function PersonaForm({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Rol / oficio">
-            <input type="text" list="oficios" value={form.oficio ?? ""} onChange={(e) => set("oficio", e.target.value)} placeholder="Maestro, Ayudante…" className={inp} />
-            <datalist id="oficios">{OFICIOS.map((o) => <option key={o} value={o} />)}</datalist>
+            <SmartSelect
+              value={form.oficio ?? ""}
+              onChange={(v) => set("oficio", v)}
+              categoria="oficio"
+              defaults={OFICIOS}
+              placeholder="Maestro, Ayudante…"
+              ariaLabel="Rol u oficio"
+            />
           </Field>
           <Field label="Estado">
-            <select value={form.activo ? "1" : "0"} onChange={(e) => set("activo", e.target.value === "1")} className={cn(inp, "appearance-none")}>
-              <option value="1">Activo</option>
-              <option value="0">Inactivo</option>
-            </select>
+            <Select
+              value={form.activo ? "1" : "0"}
+              onChange={(v) => set("activo", v === "1")}
+              ariaLabel="Estado"
+              options={[
+                { value: "1", label: "Activo" },
+                { value: "0", label: "Inactivo" },
+              ]}
+            />
           </Field>
         </div>
 
@@ -96,13 +109,14 @@ export function PersonaForm({
               placeholder="0.00"
               className={inp}
             />
-            <select
-              value={form.jornal_tipo}
-              onChange={(e) => set("jornal_tipo", e.target.value as JornalTipo)}
-              className={cn(inp, "w-40 shrink-0 appearance-none")}
-            >
-              {JORNAL_TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
+            <div className="w-40 shrink-0">
+              <Select
+                value={form.jornal_tipo}
+                onChange={(v) => set("jornal_tipo", v as JornalTipo)}
+                ariaLabel="Tipo de jornal"
+                options={JORNAL_TIPOS.map((t) => ({ value: t.value, label: t.label }))}
+              />
+            </div>
           </div>
           <p className="mt-1 text-[11px] text-content-subtle">
             Pago de Edwin a su trabajador (dato sensible). No son cobros ni contratos.
