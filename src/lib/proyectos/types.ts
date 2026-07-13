@@ -364,6 +364,127 @@ export const JORNAL_TIPO_CORTO: Record<JornalTipo, string> = {
   hora: "hora",
 };
 
+// ── Nómina ───────────────────────────────────────────────────
+// El sistema CALCULA y REGISTRA la nómina. NO paga. "Pagada" es una etiqueta.
+// Nómina = días trabajados (asistencia) × jornal/día (personal) + extras − descuentos.
+// TODO el cálculo de montos ocurre en el servidor. Estos tipos son solo formas.
+
+export type NominaEstado = "pendiente" | "pagada" | "anulada";
+export type MetodoPago = "efectivo" | "transferencia" | "otro";
+
+/** Un extra (bono, horas extra…) o un descuento (adelanto, otro) de una línea. */
+export type ConceptoLinea = {
+  tipo: "extra" | "descuento";
+  concepto: string;
+  monto: number;
+};
+
+export type NominaLinea = {
+  id: string;
+  nomina_id: string;
+  persona_id: string | null;
+  persona_nombre: string;
+  dias: number;
+  jornal: number;
+  jornal_tipo: JornalTipo;
+  jornal_diario: number;
+  base: number;
+  extras: number;
+  descuentos: number;
+  neto: number;
+  conceptos: ConceptoLinea[];
+  created_at: string;
+};
+
+export type Nomina = {
+  id: string;
+  desde: string;
+  hasta: string;
+  estado: NominaEstado;
+  total: number;
+  fecha_cierre: string;
+  fecha_pago: string | null;
+  metodo_pago: MetodoPago | null;
+  notas: string | null;
+  created_at: string;
+  updated_at: string;
+  /** Presente en el detalle (getNomina). */
+  lineas?: NominaLinea[];
+  /** Cantidad de personas (para el listado). */
+  personas?: number;
+};
+
+/**
+ * Línea del PREVIEW de nómina: calculada en el servidor a partir de la
+ * asistencia y el jornal. No está guardada aún; Edwin le suma extras/descuentos
+ * antes de cerrar. La base NUNCA la fija el cliente — se recalcula al guardar.
+ */
+export type PreviewLinea = {
+  persona_id: string;
+  persona_nombre: string;
+  oficio: string | null;
+  dias: number;
+  jornal: number;
+  jornal_tipo: JornalTipo;
+  jornal_diario: number;
+  base: number;
+  /** Texto legible del cálculo, p. ej. "6.5 días × RD$1,500.00/día = RD$9,750.00". */
+  supuesto: string;
+};
+
+/** Días laborables por semana y horas por día (para convertir el jornal a /día). */
+export const DIAS_POR_SEMANA = 6;
+export const HORAS_POR_DIA = 8;
+
+/** Redondeo a 2 decimales estable (evita 0.1+0.2 = 0.30000000000000004). */
+export function round2(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
+/** Convierte el jornal a monto por día según su unidad (transparente para Edwin). */
+export function jornalDiario(jornal: number, tipo: JornalTipo): number {
+  if (tipo === "semana") return round2(jornal / DIAS_POR_SEMANA);
+  if (tipo === "hora") return round2(jornal * HORAS_POR_DIA);
+  return round2(jornal);
+}
+
+export const METODOS_PAGO: { value: MetodoPago; label: string }[] = [
+  { value: "efectivo", label: "Efectivo" },
+  { value: "transferencia", label: "Transferencia" },
+  { value: "otro", label: "Otro" },
+];
+
+export const METODO_PAGO_LABEL: Record<MetodoPago, string> = {
+  efectivo: "Efectivo",
+  transferencia: "Transferencia",
+  otro: "Otro",
+};
+
+/** Badge por estado de nómina. Contraste verificado en ambos temas. */
+export const NOMINA_ESTADO_BADGE: Record<
+  NominaEstado,
+  { badge: string; dot: string; label: string }
+> = {
+  pendiente: {
+    badge:
+      "bg-amber-500/12 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/25",
+    dot: "bg-amber-500",
+    label: "Pendiente",
+  },
+  pagada: {
+    badge:
+      "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/25",
+    dot: "bg-emerald-500",
+    label: "Pagada",
+  },
+  anulada: {
+    badge:
+      "bg-slate-500/12 text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-500/25",
+    dot: "bg-slate-500",
+    label: "Anulada",
+  },
+};
+
 /** Enlace de WhatsApp para un teléfono dominicano (+1). Null si no hay número. */
 export function whatsappLink(telefono: string | null): string | null {
   if (!telefono) return null;

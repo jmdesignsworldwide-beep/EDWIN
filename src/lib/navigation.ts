@@ -8,6 +8,7 @@ import {
   ShoppingCart,
   Users,
   ClipboardCheck,
+  Banknote,
   Wrench,
   FileText,
   BarChart3,
@@ -67,6 +68,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Personal", href: "/personal", icon: Users },
       { label: "Asistencia", href: "/asistencia", icon: ClipboardCheck },
+      { label: "Nómina", href: "/nomina", icon: Banknote },
       { label: "Seguridad", href: "/seguridad", icon: ShieldCheck },
     ],
   },
