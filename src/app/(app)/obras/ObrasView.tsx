@@ -17,11 +17,13 @@ type Filtro = "activas" | "terminadas" | "todas";
 export function ObrasView({
   proyectos,
   clientes,
+  personal,
   configured,
   loadError,
 }: {
   proyectos: Proyecto[];
   clientes: Cliente[];
+  personal: { id: string; nombre: string }[];
   configured: boolean;
   loadError?: string;
 }) {
@@ -159,6 +161,7 @@ export function ObrasView({
       >
         <ObraForm
           clientes={clientes}
+          personal={personal}
           onSaved={() => { setCreating(false); router.refresh(); }}
           onCancel={() => setCreating(false)}
         />
