@@ -59,6 +59,16 @@ function parseInput(raw: unknown): ProyectoInput | { error: string } {
     return s === "" ? null : s;
   };
 
+  // Hora esperada de entrada (HH:MM). Null si vacía o inválida.
+  let horaEsperada: string | null = null;
+  const rawHora = str(d.hora_entrada_esperada);
+  if (rawHora && /^\d{1,2}:\d{2}$/.test(rawHora)) {
+    const [h, m] = rawHora.split(":").map(Number);
+    if (h >= 0 && h < 24 && m >= 0 && m < 60) {
+      horaEsperada = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    }
+  }
+
   return {
     nombre,
     ubicacion: str(d.ubicacion),
@@ -67,6 +77,7 @@ function parseInput(raw: unknown): ProyectoInput | { error: string } {
     fecha_inicio: str(d.fecha_inicio),
     fecha_fin_estimada: str(d.fecha_fin_estimada),
     presupuesto,
+    hora_entrada_esperada: horaEsperada,
     notas: str(d.notas),
   };
 }

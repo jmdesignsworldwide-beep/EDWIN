@@ -52,7 +52,7 @@ export async function marcarAsistencia(
   obraId: string,
   fecha: string,
   estado: EstadoAsistencia,
-  extra?: { horas?: number | null; hora_entrada?: string | null; hora_salida?: string | null; notas?: string | null },
+  extra?: { horas?: number | null; hora_entrada?: string | null; hora_salida?: string | null; excusa?: string | null; notas?: string | null },
 ): Promise<MarcarResult> {
   await requireUser();
   if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
@@ -81,6 +81,7 @@ export async function marcarAsistencia(
         horas,
         hora_entrada: clean(extra?.hora_entrada),
         hora_salida: clean(extra?.hora_salida),
+        excusa: clean(extra?.excusa),
         notas: clean(extra?.notas),
       },
       { onConflict: "persona_id,obra_id,fecha" },
@@ -95,7 +96,7 @@ export async function marcarAsistencia(
 }
 
 export type AsistenciaConObra = Asistencia & {
-  obra: { id: string; nombre: string } | null;
+  obra: { id: string; nombre: string; hora_entrada_esperada: string | null } | null;
 };
 
 /** Historial de asistencia de una persona en un rango (consolidado / nómina). */
@@ -110,7 +111,7 @@ export async function listAsistenciaPersona(
     const supabase = createAdminClient();
     const { data, error } = await supabase
       .from("asistencia")
-      .select("*, obra:proyectos(id,nombre)")
+      .select("*, obra:proyectos(id,nombre,hora_entrada_esperada)")
       .eq("persona_id", personaId)
       .gte("fecha", desde)
       .lte("fecha", hasta)

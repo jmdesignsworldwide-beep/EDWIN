@@ -9,6 +9,8 @@ import {
 } from "@/app/(app)/asistencia/actions";
 import {
   diasTrabajados,
+  puntualidad,
+  PUNTUALIDAD_BADGE,
   ESTADO_ASISTENCIA_UI,
   ESTADOS_ASISTENCIA,
 } from "@/lib/proyectos/types";
@@ -46,7 +48,11 @@ export function AsistenciaConsolidado({ personaId }: { personaId: string }) {
 
   const dias = diasTrabajados(rows);
   const conteo = { presente: 0, medio: 0, ausente: 0 };
-  for (const r of rows) conteo[r.estado]++;
+  let tardanzas = 0;
+  for (const r of rows) {
+    conteo[r.estado]++;
+    if (puntualidad(r.hora_entrada, r.obra?.hora_entrada_esperada)?.estado === "tarde") tardanzas++;
+  }
 
   const inp = "h-9 rounded-lg border border-line bg-surface px-2.5 text-xs text-content focus:border-brand/50 focus:outline-none";
 
@@ -70,6 +76,11 @@ export function AsistenciaConsolidado({ personaId }: { personaId: string }) {
             <p className="text-2xl font-bold tabular-nums text-content">
               {loading ? "—" : dias.toLocaleString("es-DO", { maximumFractionDigits: 1 })}
             </p>
+            {!loading && tardanzas > 0 && (
+              <p className="mt-0.5 text-xs font-medium text-amber-700 dark:text-amber-300">
+                {tardanzas} {tardanzas === 1 ? "tardanza" : "tardanzas"} en el rango
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {ESTADOS_ASISTENCIA.map((e) => (
@@ -95,6 +106,15 @@ export function AsistenciaConsolidado({ personaId }: { personaId: string }) {
               ) : (
                 <span className="min-w-0 flex-1 truncate text-xs text-content-subtle">Obra</span>
               )}
+              {(() => {
+                const p = puntualidad(r.hora_entrada, r.obra?.hora_entrada_esperada);
+                if (!p || p.estado === "a_tiempo") return null;
+                return (
+                  <span className={cn("hidden shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:inline-block", PUNTUALIDAD_BADGE[p.estado].badge)}>
+                    {PUNTUALIDAD_BADGE[p.estado].label}
+                  </span>
+                );
+              })()}
               <span className={cn("shrink-0 text-[11px] font-semibold", ESTADO_ASISTENCIA_UI[r.estado].text)}>
                 {r.estado === "medio" ? "½ día" : r.estado === "presente" ? "Presente" : "Ausente"}
               </span>
