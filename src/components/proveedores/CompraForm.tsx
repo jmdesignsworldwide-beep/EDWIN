@@ -8,6 +8,7 @@ import {
   createCompra,
   updateCompra,
 } from "@/app/(app)/proveedores/compras-actions";
+import { Select } from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
 
 /** CompraForm — registrar/editar una compra a un proveedor (registro simple). */
@@ -99,18 +100,15 @@ export function CompraForm({
 
         <div>
           <label className="mb-1.5 block text-xs font-medium text-content-muted">Obra (opcional)</label>
-          <select
+          <Select
             value={form.obra_id ?? ""}
-            onChange={(e) => set("obra_id", e.target.value === "" ? null : e.target.value)}
-            className={cn(inp, "appearance-none")}
-          >
-            <option value="">Sin obra específica</option>
-            {obras.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => set("obra_id", v === "" ? null : v)}
+            ariaLabel="Obra"
+            options={[
+              { value: "", label: "Sin obra específica" },
+              ...obras.map((o) => ({ value: o.id, label: o.nombre })),
+            ]}
+          />
         </div>
 
         <div>

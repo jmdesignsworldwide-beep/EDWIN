@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getProyecto } from "../actions";
+import { listClientes } from "../clientes-actions";
 import { listProveedores } from "../../proveedores/actions";
 import { listPersonal } from "../../personal/actions";
 import { ObraWorkspace } from "./ObraWorkspace";
@@ -17,10 +18,11 @@ export default async function ObraDetailPage({
   params: { id: string };
   searchParams?: { vista?: string };
 }) {
-  const [proyecto, { proveedores }, { personal }] = await Promise.all([
+  const [proyecto, { proveedores }, { personal }, { clientes }] = await Promise.all([
     getProyecto(params.id),
     listProveedores(),
     listPersonal(),
+    listClientes(),
   ]);
 
   if (!proyecto) {
@@ -43,14 +45,18 @@ export default async function ObraDetailPage({
 
   const vista = searchParams?.vista;
   const initialTab =
-    vista === "materiales" || vista === "equipo" || vista === "asistencia"
+    vista === "cronograma" ||
+    vista === "materiales" ||
+    vista === "equipo" ||
+    vista === "asistencia"
       ? vista
-      : "cronograma";
+      : "resumen";
   return (
     <ObraWorkspace
       proyecto={proyecto}
       proveedores={proveedores}
       personal={personal}
+      clientes={clientes}
       initialTab={initialTab}
     />
   );

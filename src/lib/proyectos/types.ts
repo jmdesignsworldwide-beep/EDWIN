@@ -19,21 +19,88 @@ export type Usuario = {
   created_at: string;
 };
 
+export type ClienteTipo = "persona" | "empresa";
+
 export type Cliente = {
   id: string;
+  /** Nombre visible: persona → nombre completo; empresa → razón social. */
   nombre: string;
+  tipo: ClienteTipo;
   telefono: string | null;
+  /** Cédula (persona) o RNC (empresa) según el tipo. */
   cedula_rnc: string | null;
+  email: string | null;
+  direccion: string | null;
+  /** Persona de contacto dentro de la empresa. */
+  contacto_nombre: string | null;
+  contacto_telefono: string | null;
+  /** false = creado por quick-add, faltan datos por completar. */
+  datos_completos: boolean;
   created_at: string;
   updated_at: string;
 };
 
-/** Datos cortos del quick-add de cliente. */
+/** Datos del formulario de cliente (completo o quick-add). */
 export type ClienteInput = {
   nombre: string;
+  tipo: ClienteTipo;
   telefono: string | null;
   cedula_rnc: string | null;
+  email: string | null;
+  direccion: string | null;
+  contacto_nombre: string | null;
+  contacto_telefono: string | null;
 };
+
+export const TIPOS_CLIENTE: { value: ClienteTipo; label: string }[] = [
+  { value: "persona", label: "Persona" },
+  { value: "empresa", label: "Empresa" },
+];
+
+export const CLIENTE_TIPO_LABEL: Record<ClienteTipo, string> = {
+  persona: "Persona",
+  empresa: "Empresa",
+};
+
+/** Badge por tipo de cliente. Contraste verificado en ambos temas. */
+export const CLIENTE_TIPO_BADGE: Record<
+  ClienteTipo,
+  { badge: string; label: string }
+> = {
+  persona: {
+    badge:
+      "bg-sky-500/12 text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/25",
+    label: "Persona",
+  },
+  empresa: {
+    badge:
+      "bg-violet-500/12 text-violet-700 dark:text-violet-300 ring-1 ring-inset ring-violet-500/25",
+    label: "Empresa",
+  },
+};
+
+/** Etiqueta del documento según el tipo (cédula para persona, RNC para empresa). */
+export function documentoLabel(tipo: ClienteTipo): string {
+  return tipo === "empresa" ? "RNC" : "Cédula";
+}
+
+/**
+ * Un cliente está "completo" cuando tiene los datos clave de su tipo:
+ * nombre, teléfono y documento; y para empresa, además persona de contacto.
+ */
+export function clienteCompleto(c: {
+  tipo: ClienteTipo;
+  nombre: string | null;
+  telefono: string | null;
+  cedula_rnc: string | null;
+  contacto_nombre?: string | null;
+}): boolean {
+  if (!c.nombre?.trim()) return false;
+  if (!c.telefono?.trim()) return false;
+  if (!c.cedula_rnc?.trim()) return false;
+  if (c.tipo === "empresa" && !c.contacto_nombre?.trim()) return false;
+  return true;
+}
 
 export type EstadoEtapa = "pendiente" | "en_curso" | "completada" | "retrasada";
 
@@ -635,6 +702,30 @@ export function normalizarCedulaRnc(
     ok: false,
     error: "Cédula (11 dígitos) o RNC (9 dígitos) inválido.",
   };
+}
+
+/**
+ * Valida el documento según el tipo de cliente: persona → cédula (11 dígitos),
+ * empresa → RNC (9 dígitos). Vacío es válido (queda como dato por completar).
+ */
+export function normalizarDocumento(
+  raw: string,
+  tipo: ClienteTipo,
+): { ok: true; value: string | null } | { ok: false; error: string } {
+  const s = raw.trim();
+  if (s === "") return { ok: true, value: null };
+  const digits = s.replace(/\D/g, "");
+  if (tipo === "empresa") {
+    if (digits.length === 9) return { ok: true, value: digits };
+    return { ok: false, error: "El RNC debe tener 9 dígitos." };
+  }
+  if (digits.length === 11) {
+    return {
+      ok: true,
+      value: `${digits.slice(0, 3)}-${digits.slice(3, 10)}-${digits.slice(10)}`,
+    };
+  }
+  return { ok: false, error: "La cédula debe tener 11 dígitos (000-0000000-0)." };
 }
 
 export const ESTADOS: { value: EstadoObra; label: string }[] = [

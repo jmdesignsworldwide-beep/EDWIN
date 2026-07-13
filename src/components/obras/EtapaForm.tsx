@@ -10,6 +10,7 @@ import {
   type EstadoEtapa,
 } from "@/lib/proyectos/types";
 import { createEtapa, updateEtapa } from "@/app/(app)/obras/etapas-actions";
+import { Select } from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
 
 const FASES_SUGERIDAS = [
@@ -107,17 +108,12 @@ export function EtapaForm({
           <label className="mb-1.5 block text-xs font-medium text-content-muted">
             Estado
           </label>
-          <select
+          <Select
             value={form.estado}
-            onChange={(e) => setEstado(e.target.value as EstadoEtapa)}
-            className={cn(inp, "appearance-none")}
-          >
-            {ESTADOS_ETAPA.map((e) => (
-              <option key={e.value} value={e.value}>
-                {e.label}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setEstado(v as EstadoEtapa)}
+            ariaLabel="Estado de la etapa"
+            options={ESTADOS_ETAPA.map((e) => ({ value: e.value, label: e.label }))}
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

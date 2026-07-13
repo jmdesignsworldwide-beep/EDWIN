@@ -15,6 +15,7 @@ import {
   updateMaterial,
 } from "@/app/(app)/obras/materiales-actions";
 import { ProveedorSelect } from "./ProveedorSelect";
+import { Select } from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
 
 /**
@@ -99,18 +100,15 @@ export function MaterialForm({
             <label className="mb-1.5 block text-xs font-medium text-content-muted">
               Etapa (opcional)
             </label>
-            <select
+            <Select
               value={form.etapa_id ?? ""}
-              onChange={(e) => set("etapa_id", e.target.value === "" ? null : e.target.value)}
-              className={cn(inp, "appearance-none")}
-            >
-              <option value="">Toda la obra</option>
-              {etapas.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.nombre}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => set("etapa_id", v === "" ? null : v)}
+              ariaLabel="Etapa"
+              options={[
+                { value: "", label: "Toda la obra" },
+                ...etapas.map((e) => ({ value: e.id, label: e.nombre })),
+              ]}
+            />
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-medium text-content-muted">

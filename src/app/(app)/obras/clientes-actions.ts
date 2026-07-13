@@ -7,9 +7,11 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase/server";
 import {
-  normalizarCedulaRnc,
+  clienteCompleto,
+  normalizarDocumento,
   type Cliente,
   type ClienteInput,
+  type ClienteTipo,
 } from "@/lib/proyectos/types";
 
 export type ClientesListResult = {
@@ -44,33 +46,51 @@ export async function listClientes(): Promise<ClientesListResult> {
   }
 }
 
-/** Registra un cliente nuevo (quick-add). Valida cédula/RNC dominicano. */
+/**
+ * Registra un cliente nuevo (quick-add desde el formulario de obra). Pide lo
+ * mínimo (nombre + tipo + teléfono) y lo marca como `datos_completos = false`
+ * para empujar a Edwin a completar su perfil después. Valida el documento
+ * si se proporciona.
+ */
 export async function createCliente(
-  raw: ClienteInput,
+  raw: Partial<ClienteInput>,
 ): Promise<ClienteMutationResult> {
   await requireUser();
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Supabase aún no está configurado." };
   }
 
+  const tipo: ClienteTipo = raw?.tipo === "empresa" ? "empresa" : "persona";
+
   const nombre = String(raw?.nombre ?? "").trim();
-  if (!nombre) return { ok: false, error: "El nombre del cliente es obligatorio." };
-  if (nombre.length > 160) return { ok: false, error: "El nombre es demasiado largo." };
+  if (!nombre) {
+    return { ok: false, error: tipo === "empresa" ? "La razón social es obligatoria." : "El nombre es obligatorio." };
+  }
+  if (nombre.length > 180) return { ok: false, error: "El nombre es demasiado largo." };
 
   const telefono = String(raw?.telefono ?? "").trim() || null;
 
-  const ced = normalizarCedulaRnc(String(raw?.cedula_rnc ?? ""));
-  if (!ced.ok) return { ok: false, error: ced.error };
+  const doc = normalizarDocumento(String(raw?.cedula_rnc ?? ""), tipo);
+  if (!doc.ok) return { ok: false, error: doc.error };
+
+  const payload = {
+    nombre,
+    tipo,
+    telefono,
+    cedula_rnc: doc.value,
+  };
+  const datos_completos = clienteCompleto({ ...payload, contacto_nombre: null });
 
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
       .from("clientes")
-      .insert({ nombre, telefono, cedula_rnc: ced.value })
+      .insert({ ...payload, datos_completos })
       .select("*")
       .single();
     if (error) throw error;
     revalidatePath("/obras");
+    revalidatePath("/clientes");
     return { ok: true, cliente: data as Cliente };
   } catch {
     return { ok: false, error: "No se pudo registrar el cliente." };
