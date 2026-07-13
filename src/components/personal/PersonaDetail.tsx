@@ -23,6 +23,7 @@ import {
   whatsappLink,
   type Persona,
 } from "@/lib/proyectos/types";
+import { AsistenciaConsolidado } from "./AsistenciaConsolidado";
 import { formatCurrency, cn } from "@/lib/utils";
 import {
   asignarPersonaObra,
@@ -185,6 +186,9 @@ export function PersonaDetail({
             )
           )}
         </div>
+
+        {/* Consolidado de asistencia (base de nómina) */}
+        <AsistenciaConsolidado personaId={persona.id} />
       </div>
 
       <div className="mt-6 flex items-center justify-between gap-2.5 border-t border-line pt-4">

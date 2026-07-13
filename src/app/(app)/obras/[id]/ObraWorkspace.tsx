@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, GanttChartSquare, Package, AlertTriangle, Users } from "lucide-react";
+import { ArrowLeft, GanttChartSquare, Package, AlertTriangle, Users, CalendarCheck } from "lucide-react";
 import { Reveal, ProgressBar, MagneticCard } from "@/components/primitives";
 import { EstadoBadge } from "@/components/obras/EstadoBadge";
 import { EtapasSection } from "./EtapasSection";
 import { MaterialesSection } from "./MaterialesSection";
 import { EquipoSection } from "./EquipoSection";
+import { AsistenciaTab } from "./AsistenciaTab";
 import {
   clienteNombre,
   etapasCompletadas,
@@ -18,7 +19,7 @@ import {
 } from "@/lib/proyectos/types";
 import { cn } from "@/lib/utils";
 
-type Tab = "cronograma" | "materiales" | "equipo";
+type Tab = "cronograma" | "materiales" | "equipo" | "asistencia";
 
 export function ObraWorkspace({
   proyecto,
@@ -88,14 +89,19 @@ export function ObraWorkspace({
         <TabBtn active={tab === "equipo"} onClick={() => setTab("equipo")} icon={Users} count={nEquipo}>
           Equipo
         </TabBtn>
+        <TabBtn active={tab === "asistencia"} onClick={() => setTab("asistencia")} icon={CalendarCheck}>
+          Asistencia
+        </TabBtn>
       </div>
 
       {tab === "cronograma" ? (
         <EtapasSection proyecto={proyecto} />
       ) : tab === "materiales" ? (
         <MaterialesSection proyecto={proyecto} proveedores={proveedores} />
-      ) : (
+      ) : tab === "equipo" ? (
         <EquipoSection proyecto={proyecto} personal={personal} />
+      ) : (
+        <AsistenciaTab obraId={proyecto.id} />
       )}
     </>
   );
