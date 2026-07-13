@@ -552,6 +552,108 @@ export const NOMINA_ESTADO_BADGE: Record<
   },
 };
 
+// ── Bloque 2 · Pagos/entregas y notas del empleado ───────────
+
+export type PagoTipo = "adelanto" | "pago" | "entrega" | "otro";
+
+export type PagoEmpleado = {
+  id: string;
+  persona_id: string;
+  tipo: PagoTipo;
+  monto: number;
+  concepto: string | null;
+  fecha: string;
+  origen: "manual" | "nomina";
+  saldado: boolean;
+  nomina_id: string | null;
+  notas: string | null;
+  created_at: string;
+};
+
+export type PagoInput = {
+  tipo: PagoTipo;
+  monto: number;
+  concepto: string | null;
+  fecha: string;
+  notas: string | null;
+};
+
+export const PAGO_TIPOS: { value: PagoTipo; label: string }[] = [
+  { value: "adelanto", label: "Adelanto" },
+  { value: "pago", label: "Pago" },
+  { value: "entrega", label: "Entrega" },
+  { value: "otro", label: "Otro" },
+];
+
+export const PAGO_TIPO_LABEL: Record<PagoTipo, string> = {
+  adelanto: "Adelanto",
+  pago: "Pago",
+  entrega: "Entrega",
+  otro: "Otro",
+};
+
+/** Badge por tipo de pago. Contraste verificado en ambos temas. */
+export const PAGO_TIPO_BADGE: Record<PagoTipo, string> = {
+  adelanto: "bg-amber-500/12 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/25",
+  pago: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/25",
+  entrega: "bg-sky-500/12 text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/25",
+  otro: "bg-slate-500/12 text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-500/25",
+};
+
+export type NotaTipo = "positiva" | "negativa" | "neutral";
+
+export type NotaEmpleado = {
+  id: string;
+  persona_id: string;
+  nota: string;
+  tipo: NotaTipo;
+  fecha: string;
+  created_at: string;
+};
+
+export const NOTA_TIPOS: { value: NotaTipo; label: string }[] = [
+  { value: "positiva", label: "Positiva" },
+  { value: "negativa", label: "A mejorar" },
+  { value: "neutral", label: "Neutral" },
+];
+
+export const NOTA_TIPO_BADGE: Record<NotaTipo, { badge: string; label: string; dot: string }> = {
+  positiva: {
+    badge: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/25",
+    label: "Positiva",
+    dot: "bg-emerald-500",
+  },
+  negativa: {
+    badge: "bg-rose-500/12 text-rose-700 dark:text-rose-300 ring-1 ring-inset ring-rose-500/25",
+    label: "A mejorar",
+    dot: "bg-rose-500",
+  },
+  neutral: {
+    badge: "bg-slate-500/12 text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-500/25",
+    label: "Neutral",
+    dot: "bg-slate-500",
+  },
+};
+
+/** Total entregado (suma de todos los pagos/entregas). */
+export function totalEntregado(pagos: { monto: number }[]): number {
+  return round2(pagos.reduce((acc, p) => acc + (p.monto ?? 0), 0));
+}
+
+/** Adelantos pendientes (aún no saldados en nómina). Base para el Bloque 4. */
+export function adelantosPendientes(
+  pagos: { tipo: PagoTipo; saldado: boolean; monto: number }[],
+): number {
+  return round2(
+    pagos
+      .filter((p) => p.tipo === "adelanto" && !p.saldado)
+      .reduce((acc, p) => acc + (p.monto ?? 0), 0),
+  );
+}
+
+/** Categorías de opciones de selector inteligente (claves en opciones_selector). */
+export type CategoriaOpcion = "proveedor_categoria" | "oficio" | "unidad_material";
+
 /** Enlace de WhatsApp para un teléfono dominicano (+1). Null si no hay número. */
 export function whatsappLink(telefono: string | null): string | null {
   if (!telefono) return null;

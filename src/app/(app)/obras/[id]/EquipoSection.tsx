@@ -83,10 +83,10 @@ export function EquipoSection({
             return (
               <Reveal key={a.id}>
                 <div className="flex items-center gap-3 rounded-xl border border-line bg-surface/50 p-3.5 shadow-card">
-                  <Link href={`/personal?persona=${p.id}`} className="group grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-gradient text-sm font-bold text-brand-ink" title="Ver persona">
+                  <Link href={`/personal/${p.id}`} className="group grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-gradient text-sm font-bold text-brand-ink" title="Ver persona">
                     {initials(p.nombre)}
                   </Link>
-                  <Link href={`/personal?persona=${p.id}`} className="group min-w-0 flex-1">
+                  <Link href={`/personal/${p.id}`} className="group min-w-0 flex-1">
                     <span className="flex items-center gap-1.5">
                       <span className="truncate text-sm font-semibold text-content group-hover:text-brand">{p.nombre}</span>
                       {!p.activo && <span className="shrink-0 rounded-full bg-slate-500/12 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300">Inactivo</span>}

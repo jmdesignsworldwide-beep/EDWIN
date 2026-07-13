@@ -12,6 +12,7 @@ import {
 } from "@/lib/proyectos/types";
 import { createPersona, updatePersona } from "@/app/(app)/personal/actions";
 import { Select } from "@/components/ui/Select";
+import { SmartSelect } from "@/components/ui/SmartSelect";
 import { cn } from "@/lib/utils";
 
 /** PersonaForm — alta/edición de una persona. Jornal es dato sensible (server-only). */
@@ -66,8 +67,14 @@ export function PersonaForm({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Rol / oficio">
-            <input type="text" list="oficios" value={form.oficio ?? ""} onChange={(e) => set("oficio", e.target.value)} placeholder="Maestro, Ayudante…" className={inp} />
-            <datalist id="oficios">{OFICIOS.map((o) => <option key={o} value={o} />)}</datalist>
+            <SmartSelect
+              value={form.oficio ?? ""}
+              onChange={(v) => set("oficio", v)}
+              categoria="oficio"
+              defaults={OFICIOS}
+              placeholder="Maestro, Ayudante…"
+              ariaLabel="Rol u oficio"
+            />
           </Field>
           <Field label="Estado">
             <Select

@@ -3,6 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/primitives";
+import { SmartSelect } from "@/components/ui/SmartSelect";
 import {
   CATEGORIAS_PROVEEDOR,
   type Proveedor,
@@ -78,19 +79,14 @@ export function ProveedorForm({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-xs font-medium text-content-muted">Categoría / rubro</label>
-            <input
-              type="text"
-              list="categorias-prov"
+            <SmartSelect
               value={form.categoria ?? ""}
-              onChange={(e) => set("categoria", e.target.value)}
+              onChange={(v) => set("categoria", v)}
+              categoria="proveedor_categoria"
+              defaults={CATEGORIAS_PROVEEDOR}
               placeholder="Ferretería, Bloquera…"
-              className={inp}
+              ariaLabel="Categoría del proveedor"
             />
-            <datalist id="categorias-prov">
-              {CATEGORIAS_PROVEEDOR.map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-medium text-content-muted">Teléfono</label>

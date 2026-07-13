@@ -16,6 +16,7 @@ import {
 } from "@/app/(app)/obras/materiales-actions";
 import { ProveedorSelect } from "./ProveedorSelect";
 import { Select } from "@/components/ui/Select";
+import { SmartSelect } from "@/components/ui/SmartSelect";
 import { cn } from "@/lib/utils";
 
 /**
@@ -114,19 +115,14 @@ export function MaterialForm({
             <label className="mb-1.5 block text-xs font-medium text-content-muted">
               Unidad
             </label>
-            <input
-              type="text"
-              list="unidades"
+            <SmartSelect
               value={form.unidad ?? ""}
-              onChange={(e) => set("unidad", e.target.value)}
+              onChange={(v) => set("unidad", v)}
+              categoria="unidad_material"
+              defaults={UNIDADES}
               placeholder="sacos, m³, galones…"
-              className={inp}
+              ariaLabel="Unidad del material"
             />
-            <datalist id="unidades">
-              {UNIDADES.map((u) => (
-                <option key={u} value={u} />
-              ))}
-            </datalist>
           </div>
         </div>
 
