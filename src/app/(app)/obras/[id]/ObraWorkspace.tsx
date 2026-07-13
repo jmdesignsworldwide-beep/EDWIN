@@ -160,7 +160,7 @@ export function ObraWorkspace({
       ) : tab === "equipo" ? (
         <EquipoSection proyecto={proyecto} personal={personal} />
       ) : tab === "asistencia" ? (
-        <AsistenciaTab obraId={proyecto.id} />
+        <AsistenciaTab obraId={proyecto.id} horaEsperada={proyecto.hora_entrada_esperada} />
       ) : tab === "galeria" ? (
         <ComingSoon icon={Images} title="Galería de fotos" description="Sube fotos del avance de la obra desde el celular, organizadas por fecha. Llega en el próximo bloque del rediseño." />
       ) : tab === "documentos" ? (

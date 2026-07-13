@@ -44,6 +44,7 @@ export function ObraForm({
     fecha_inicio: proyecto?.fecha_inicio ?? "",
     fecha_fin_estimada: proyecto?.fecha_fin_estimada ?? "",
     presupuesto: proyecto?.presupuesto ?? null,
+    hora_entrada_esperada: proyecto?.hora_entrada_esperada ?? "",
     notas: proyecto?.notas ?? "",
   });
 
@@ -151,6 +152,18 @@ export function ObraForm({
           />
           <p className="mt-1 text-[11px] text-content-subtle">
             Presupuesto de la obra de Edwin (no cobros ni contratos).
+          </p>
+        </Field>
+
+        <Field label="Hora de entrada esperada">
+          <input
+            type="time"
+            value={form.hora_entrada_esperada ?? ""}
+            onChange={(e) => set("hora_entrada_esperada", e.target.value)}
+            className={inputCls}
+          />
+          <p className="mt-1 text-[11px] text-content-subtle">
+            Para marcar tarde/temprano al pasar lista. Si la dejas vacía, se usa 8:00 AM.
           </p>
         </Field>
 

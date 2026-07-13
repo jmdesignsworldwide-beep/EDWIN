@@ -11,6 +11,9 @@ import {
 import {
   ESTADOS_ASISTENCIA,
   ESTADO_ASISTENCIA_UI,
+  PUNTUALIDAD_BADGE,
+  puntualidad,
+  puntualidadLabel,
   type EstadoAsistencia,
   type PaseListaRow,
 } from "@/lib/proyectos/types";
@@ -22,7 +25,7 @@ function todayISO(): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-export function AsistenciaTab({ obraId }: { obraId: string }) {
+export function AsistenciaTab({ obraId, horaEsperada }: { obraId: string; horaEsperada?: string | null }) {
   const [fecha, setFecha] = useState(todayISO());
   const [rows, setRows] = useState<PaseListaRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +58,7 @@ export function AsistenciaTab({ obraId }: { obraId: string }) {
                 horas: r.asistencia?.horas ?? null,
                 hora_entrada: r.asistencia?.hora_entrada ?? null,
                 hora_salida: r.asistencia?.hora_salida ?? null,
+                excusa: r.asistencia?.excusa ?? null,
                 notas: r.asistencia?.notas ?? null,
               },
             }
@@ -67,9 +71,13 @@ export function AsistenciaTab({ obraId }: { obraId: string }) {
   }
 
   const conteo = { presente: 0, medio: 0, ausente: 0, sin: 0 };
+  let tardes = 0;
   for (const r of rows) {
     if (!r.asistencia) conteo.sin++;
-    else conteo[r.asistencia.estado]++;
+    else {
+      conteo[r.asistencia.estado]++;
+      if (puntualidad(r.asistencia.hora_entrada, horaEsperada)?.estado === "tarde") tardes++;
+    }
   }
 
   return (
@@ -91,6 +99,11 @@ export function AsistenciaTab({ obraId }: { obraId: string }) {
             <Chip tone="presente" n={conteo.presente} label="presentes" />
             <Chip tone="medio" n={conteo.medio} label="medio" />
             <Chip tone="ausente" n={conteo.ausente} label="ausentes" />
+            {tardes > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/12 px-2 py-0.5 font-medium text-amber-700 ring-1 ring-inset ring-amber-500/25 dark:text-amber-300">
+                <span className="font-semibold">{tardes}</span> tarde
+              </span>
+            )}
             {conteo.sin > 0 && (
               <span className="rounded-full bg-surface-2 px-2 py-0.5 font-medium text-content-muted">
                 {conteo.sin} sin marcar
@@ -127,6 +140,20 @@ export function AsistenciaTab({ obraId }: { obraId: string }) {
                   <p className="truncate text-xs text-content-subtle">
                     {r.rol_en_obra || r.persona.oficio || "—"}
                   </p>
+                  {(() => {
+                    const p = r.asistencia ? puntualidad(r.asistencia.hora_entrada, horaEsperada) : null;
+                    if (!r.asistencia?.hora_entrada) return null;
+                    return (
+                      <span className="mt-1 inline-flex items-center gap-1.5 text-[11px]">
+                        <span className="tabular-nums text-content-muted">{r.asistencia.hora_entrada.slice(0, 5)}</span>
+                        {p && (
+                          <span className={cn("rounded-full px-1.5 py-0.5 font-semibold", PUNTUALIDAD_BADGE[p.estado].badge)}>
+                            {puntualidadLabel(p)}
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="inline-flex overflow-hidden rounded-lg border border-line">
@@ -177,6 +204,7 @@ export function AsistenciaTab({ obraId }: { obraId: string }) {
             row={detalle}
             obraId={obraId}
             fecha={fecha}
+            horaEsperada={horaEsperada}
             onSaved={() => {
               setDetalle(null);
               load();
@@ -202,12 +230,14 @@ function DetalleForm({
   row,
   obraId,
   fecha,
+  horaEsperada,
   onSaved,
   onCancel,
 }: {
   row: PaseListaRow;
   obraId: string;
   fecha: string;
+  horaEsperada?: string | null;
   onSaved: () => void;
   onCancel: () => void;
 }) {
@@ -216,9 +246,12 @@ function DetalleForm({
   const [horas, setHoras] = useState(a?.horas != null ? String(a.horas) : "");
   const [entrada, setEntrada] = useState(a?.hora_entrada ?? "");
   const [salida, setSalida] = useState(a?.hora_salida ?? "");
+  const [excusa, setExcusa] = useState(a?.excusa ?? "");
   const [notas, setNotas] = useState(a?.notas ?? "");
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const punt = puntualidad(entrada || null, horaEsperada);
 
   function guardar() {
     setError(null);
@@ -227,6 +260,7 @@ function DetalleForm({
         horas: horas === "" ? null : Number(horas),
         hora_entrada: entrada || null,
         hora_salida: salida || null,
+        excusa: excusa || null,
         notas: notas || null,
       });
       if (res.ok) onSaved();
@@ -271,6 +305,27 @@ function DetalleForm({
             <label className="mb-1.5 block text-xs font-medium text-content-muted">Salida</label>
             <input type="time" value={salida} onChange={(e) => setSalida(e.target.value)} className={inp} />
           </div>
+        </div>
+        {punt && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-content-muted">Puntualidad:</span>
+            <span className={cn("rounded-full px-2 py-0.5 font-semibold", PUNTUALIDAD_BADGE[punt.estado].badge)}>
+              {puntualidadLabel(punt)}
+            </span>
+            <span className="text-content-subtle">
+              (esperada {(horaEsperada || "08:00").slice(0, 5)})
+            </span>
+          </div>
+        )}
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-content-muted">Excusa / motivo (si faltó o llegó tarde)</label>
+          <input
+            type="text"
+            value={excusa}
+            onChange={(e) => setExcusa(e.target.value)}
+            placeholder="Ej. avisó que estaba enfermo, problema de transporte, sin avisar…"
+            className={inp}
+          />
         </div>
         <div>
           <label className="mb-1.5 block text-xs font-medium text-content-muted">Notas del día</label>

@@ -194,6 +194,8 @@ export type Proyecto = {
   /** Calculado a partir de las etapas (completadas ÷ total). */
   avance: number;
   presupuesto: number | null;
+  /** Hora esperada de entrada de la obra (para tarde/temprano). Null = default. */
+  hora_entrada_esperada: string | null;
   notas: string | null;
   etapas: Etapa[];
   /** Presente en el detalle de la obra (getProyecto / listado). */
@@ -298,8 +300,62 @@ export type Asistencia = {
   horas: number | null;
   hora_entrada: string | null;
   hora_salida: string | null;
+  /** Motivo de falta o tardanza (texto libre). */
+  excusa: string | null;
   notas: string | null;
 };
+
+/** Hora de entrada esperada por defecto del sistema (si la obra no define una). */
+export const HORA_ENTRADA_DEFAULT = "08:00";
+
+export type PuntualidadEstado = "a_tiempo" | "tarde" | "temprano";
+
+/**
+ * Calcula la puntualidad comparando la hora de llegada con la esperada.
+ * Tolerancia: hasta 5 min tarde = a tiempo; más de 10 min antes = temprano.
+ * Devuelve null si no hay hora de llegada.
+ */
+export function puntualidad(
+  horaEntrada: string | null,
+  esperada: string | null = HORA_ENTRADA_DEFAULT,
+): { estado: PuntualidadEstado; minutos: number } | null {
+  if (!horaEntrada) return null;
+  const toMin = (t: string): number | null => {
+    const m = /^(\d{1,2}):(\d{2})/.exec(t);
+    return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+  };
+  const l = toMin(horaEntrada);
+  const e = toMin(esperada || HORA_ENTRADA_DEFAULT);
+  if (l == null || e == null) return null;
+  const diff = l - e; // positivo = tarde
+  if (diff > 5) return { estado: "tarde", minutos: diff };
+  if (diff < -10) return { estado: "temprano", minutos: -diff };
+  return { estado: "a_tiempo", minutos: 0 };
+}
+
+export const PUNTUALIDAD_BADGE: Record<
+  PuntualidadEstado,
+  { badge: string; label: string }
+> = {
+  a_tiempo: {
+    badge: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/25",
+    label: "A tiempo",
+  },
+  tarde: {
+    badge: "bg-amber-500/12 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/25",
+    label: "Tarde",
+  },
+  temprano: {
+    badge: "bg-sky-500/12 text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/25",
+    label: "Temprano",
+  },
+};
+
+/** Texto corto de puntualidad, p.ej. "Tarde · 25 min". */
+export function puntualidadLabel(p: { estado: PuntualidadEstado; minutos: number }): string {
+  if (p.estado === "a_tiempo") return "A tiempo";
+  return `${p.estado === "tarde" ? "Tarde" : "Temprano"} · ${p.minutos} min`;
+}
 
 /** Fila del pase de lista: persona asignada + su asistencia del día (si hay). */
 export type PaseListaRow = {
@@ -760,6 +816,7 @@ export type ProyectoInput = {
   fecha_inicio: string | null;
   fecha_fin_estimada: string | null;
   presupuesto: number | null;
+  hora_entrada_esperada: string | null;
   notas: string | null;
 };
 
