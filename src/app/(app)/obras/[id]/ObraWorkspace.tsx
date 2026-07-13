@@ -24,6 +24,12 @@ import {
   Pencil,
   Trash2,
   Loader2,
+  Building2,
+  Ruler,
+  Phone,
+  HandCoins,
+  HardHat,
+  ExternalLink,
 } from "lucide-react";
 import { Reveal, ProgressBar, MagneticCard, CountUp, Button } from "@/components/primitives";
 import { Modal } from "@/components/ui/Modal";
@@ -34,12 +40,13 @@ import { EtapasSection } from "./EtapasSection";
 import { MaterialesSection } from "./MaterialesSection";
 import { EquipoSection } from "./EquipoSection";
 import { AsistenciaTab } from "./AsistenciaTab";
-import { setEstadoObra, deleteProyecto } from "../actions";
+import { setEstadoObra, deleteProyecto, signedArchivoUrl } from "../actions";
 import {
   clienteNombre,
   etapasCompletadas,
   materialesEnAlerta,
   totalMateriales,
+  METODO_ANTICIPO_LABEL,
   type Cliente,
   type Persona,
   type Proveedor,
@@ -71,6 +78,7 @@ export function ObraWorkspace({
   clientes: Cliente[];
   initialTab?: Tab;
 }) {
+  const personalResumen = personal.map((p) => ({ id: p.id, nombre: p.nombre }));
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [editing, setEditing] = useState(false);
@@ -175,6 +183,7 @@ export function ObraWorkspace({
         <ObraForm
           proyecto={proyecto}
           clientes={clientes}
+          personal={personalResumen}
           onSaved={() => { setEditing(false); router.refresh(); }}
           onCancel={() => setEditing(false)}
         />
@@ -249,7 +258,10 @@ function ObraResumen({
       <Reveal standalone>
         <div className="rounded-2xl border border-line bg-surface/50 p-5 shadow-card">
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Item icon={Building2} label="Tipo de obra" value={proyecto.tipo_obra} />
+            <Item icon={Ruler} label="Tamaño" value={proyecto.metros != null ? `${proyecto.metros.toLocaleString("es-DO")} m²` : null} />
             <Item icon={MapPin} label="Ubicación" value={proyecto.ubicacion} />
+            <Item icon={MapPin} label="Dirección" value={proyecto.direccion} />
             <div>
               <dt className="flex items-center gap-1.5 text-xs text-content-subtle">
                 <User2 className="h-3.5 w-3.5" />
@@ -263,14 +275,47 @@ function ObraResumen({
                 )}
               </dd>
             </div>
+            <Item icon={Phone} label="Teléfono de la obra" value={proyecto.telefono_obra} />
+            <div>
+              <dt className="flex items-center gap-1.5 text-xs text-content-subtle">
+                <HardHat className="h-3.5 w-3.5" />
+                Encargado
+              </dt>
+              <dd className="mt-0.5 text-sm font-medium text-content">
+                {proyecto.encargado_rel ? (
+                  <Link href={`/personal/${proyecto.encargado_rel.id}`} className="text-brand hover:underline">{proyecto.encargado_rel.nombre}</Link>
+                ) : (
+                  <span className="text-content-subtle">—</span>
+                )}
+              </dd>
+            </div>
             <Item icon={CalendarClock} label="Inicio" value={formatDate(proyecto.fecha_inicio)} />
             <Item icon={CalendarCheck} label="Fin estimado" value={formatDate(proyecto.fecha_fin_estimada)} />
             <Item
               icon={Wallet}
               label="Presupuesto de la obra"
               value={proyecto.presupuesto != null ? formatCurrency(proyecto.presupuesto) : null}
-              full
             />
+            <Item
+              icon={HandCoins}
+              label="Anticipo del cliente"
+              value={
+                proyecto.anticipo_monto != null
+                  ? `${formatCurrency(proyecto.anticipo_monto)}${proyecto.anticipo_metodo ? ` · ${METODO_ANTICIPO_LABEL[proyecto.anticipo_metodo]}` : ""}`
+                  : null
+              }
+            />
+            {proyecto.archivo_inicial && (
+              <div className="sm:col-span-2">
+                <dt className="flex items-center gap-1.5 text-xs text-content-subtle">
+                  <FileText className="h-3.5 w-3.5" />
+                  Archivo inicial
+                </dt>
+                <dd className="mt-1">
+                  <ArchivoLink path={proyecto.archivo_inicial} />
+                </dd>
+              </div>
+            )}
           </dl>
 
           {proyecto.notas && (
@@ -314,6 +359,27 @@ function ObraResumen({
         <Button variant="primary" size="md" icon={Pencil} onClick={onEdit}>Editar obra</Button>
       </div>
     </div>
+  );
+}
+
+function ArchivoLink({ path }: { path: string }) {
+  const [loading, setLoading] = useState(false);
+  async function abrir() {
+    setLoading(true);
+    const url = await signedArchivoUrl(path);
+    setLoading(false);
+    if (url) window.open(url, "_blank", "noopener");
+  }
+  return (
+    <button
+      type="button"
+      onClick={abrir}
+      disabled={loading}
+      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface/60 px-3 text-sm font-semibold text-brand transition-colors hover:bg-brand/10 disabled:opacity-70"
+    >
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+      Ver archivo
+    </button>
   );
 }
 

@@ -20,9 +20,9 @@ const ESTADOS_VALIDOS: EstadoObra[] = [
   "terminada",
 ];
 
-// Select con cliente y etapas embebidos; etapas ordenadas por `orden`.
+// Select con cliente, encargado y etapas embebidos; etapas ordenadas por `orden`.
 const SELECT =
-  "*, cliente_rel:clientes(id,nombre,telefono,cedula_rnc), etapas(id,obra_id,nombre,estado,completada,orden,fecha_inicio,fecha_fin,porcentaje,notas), materiales(id,obra_id,etapa_id,proveedor_id,proveedor_rel:proveedores(id,nombre),nombre,unidad,cantidad_comprada,cantidad_usada,costo_unitario,notas,created_at,updated_at), equipo:personal_obra(id,rol_en_obra,persona:personal(id,nombre,oficio,telefono,activo))";
+  "*, cliente_rel:clientes(id,nombre,telefono,cedula_rnc), encargado_rel:personal!proyectos_encargado_id_fkey(id,nombre), etapas(id,obra_id,nombre,estado,completada,orden,fecha_inicio,fecha_fin,porcentaje,notas), materiales(id,obra_id,etapa_id,proveedor_id,proveedor_rel:proveedores(id,nombre),nombre,unidad,cantidad_comprada,cantidad_usada,costo_unitario,notas,created_at,updated_at), equipo:personal_obra(id,rol_en_obra,persona:personal(id,nombre,oficio,telefono,activo))";
 
 export type ListResult = {
   configured: boolean;
@@ -69,6 +69,19 @@ function parseInput(raw: unknown): ProyectoInput | { error: string } {
     }
   }
 
+  // Números opcionales (metros, anticipo): null si vacío o inválido.
+  const num = (v: unknown): number | null => {
+    if (v === "" || v == null) return null;
+    const n = Number(v);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  };
+
+  const metodos = ["efectivo", "transferencia", "cheque", "otro"];
+  const anticipoMetodoRaw = str(d.anticipo_metodo);
+  const anticipo_metodo = anticipoMetodoRaw && metodos.includes(anticipoMetodoRaw)
+    ? (anticipoMetodoRaw as ProyectoInput["anticipo_metodo"])
+    : null;
+
   return {
     nombre,
     ubicacion: str(d.ubicacion),
@@ -78,6 +91,14 @@ function parseInput(raw: unknown): ProyectoInput | { error: string } {
     fecha_fin_estimada: str(d.fecha_fin_estimada),
     presupuesto,
     hora_entrada_esperada: horaEsperada,
+    tipo_obra: str(d.tipo_obra),
+    metros: num(d.metros),
+    direccion: str(d.direccion),
+    telefono_obra: str(d.telefono_obra),
+    encargado_id: str(d.encargado_id),
+    anticipo_monto: num(d.anticipo_monto),
+    anticipo_metodo,
+    archivo_inicial: str(d.archivo_inicial),
     notas: str(d.notas),
   };
 }
@@ -220,6 +241,52 @@ export async function setEstadoObra(
     return { ok: true };
   } catch {
     return { ok: false, error: "No se pudo actualizar el estado." };
+  }
+}
+
+// ── Archivo inicial de la obra (Supabase Storage, bucket privado) ──
+
+const BUCKET = "obras";
+const TIPOS_ARCHIVO = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
+const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+
+/** Sube el archivo inicial (imagen/PDF) al bucket privado y devuelve su ruta. */
+export async function subirArchivoObra(
+  formData: FormData,
+): Promise<{ ok: true; path: string } | { ok: false; error: string }> {
+  await requireUser();
+  if (!isSupabaseConfigured()) return { ok: false, error: "Supabase no configurado." };
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "No se recibió el archivo." };
+  if (file.size > MAX_BYTES) return { ok: false, error: "El archivo supera los 10 MB." };
+  if (!TIPOS_ARCHIVO.includes(file.type)) return { ok: false, error: "Solo se aceptan imágenes o PDF." };
+
+  const ext = file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase().slice(0, 8) : "bin";
+  const path = `${crypto.randomUUID()}.${ext}`;
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+    if (error) throw error;
+    return { ok: true, path };
+  } catch {
+    return { ok: false, error: "No se pudo subir el archivo." };
+  }
+}
+
+/** URL firmada temporal (60 min) para ver el archivo inicial. */
+export async function signedArchivoUrl(path: string): Promise<string | null> {
+  await requireUser();
+  if (!isSupabaseConfigured() || !path) return null;
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600);
+    if (error) throw error;
+    return data?.signedUrl ?? null;
+  } catch {
+    return null;
   }
 }
 

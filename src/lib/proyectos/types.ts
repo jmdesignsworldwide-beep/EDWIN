@@ -196,6 +196,18 @@ export type Proyecto = {
   presupuesto: number | null;
   /** Hora esperada de entrada de la obra (para tarde/temprano). Null = default. */
   hora_entrada_esperada: string | null;
+  // ── Datos detallados (todos opcionales) ──
+  tipo_obra: string | null;
+  metros: number | null;
+  direccion: string | null;
+  telefono_obra: string | null;
+  encargado_id: string | null;
+  /** Encargado embebido (personal a cargo). */
+  encargado_rel?: { id: string; nombre: string } | null;
+  anticipo_monto: number | null;
+  anticipo_metodo: MetodoAnticipo | null;
+  /** Ruta del archivo inicial en Storage (bucket privado "obras"). */
+  archivo_inicial: string | null;
   notas: string | null;
   etapas: Etapa[];
   /** Presente en el detalle de la obra (getProyecto / listado). */
@@ -708,7 +720,11 @@ export function adelantosPendientes(
 }
 
 /** Categorías de opciones de selector inteligente (claves en opciones_selector). */
-export type CategoriaOpcion = "proveedor_categoria" | "oficio" | "unidad_material";
+export type CategoriaOpcion =
+  | "proveedor_categoria"
+  | "oficio"
+  | "unidad_material"
+  | "tipo_obra";
 
 /** Enlace de WhatsApp para un teléfono dominicano (+1). Null si no hay número. */
 export function whatsappLink(telefono: string | null): string | null {
@@ -817,8 +833,43 @@ export type ProyectoInput = {
   fecha_fin_estimada: string | null;
   presupuesto: number | null;
   hora_entrada_esperada: string | null;
+  tipo_obra: string | null;
+  metros: number | null;
+  direccion: string | null;
+  telefono_obra: string | null;
+  encargado_id: string | null;
+  anticipo_monto: number | null;
+  anticipo_metodo: MetodoAnticipo | null;
+  archivo_inicial: string | null;
   notas: string | null;
 };
+
+export type MetodoAnticipo = "efectivo" | "transferencia" | "cheque" | "otro";
+
+export const METODOS_ANTICIPO: { value: MetodoAnticipo; label: string }[] = [
+  { value: "efectivo", label: "Efectivo" },
+  { value: "transferencia", label: "Transferencia" },
+  { value: "cheque", label: "Cheque" },
+  { value: "otro", label: "Otro" },
+];
+
+export const METODO_ANTICIPO_LABEL: Record<MetodoAnticipo, string> = {
+  efectivo: "Efectivo",
+  transferencia: "Transferencia",
+  cheque: "Cheque",
+  otro: "Otro",
+};
+
+/** Tipos de obra sugeridos (punto de partida del SmartSelect; Edwin agrega los suyos). */
+export const TIPOS_OBRA = [
+  "Residencial",
+  "Comercial",
+  "Remodelación",
+  "Ampliación",
+  "Reparación",
+  "Obra gris",
+  "Terminación",
+];
 
 /** Nombre visible del cliente de una obra (rel o texto legado). */
 export function clienteNombre(p: Proyecto): string | null {
