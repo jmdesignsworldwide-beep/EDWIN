@@ -812,6 +812,102 @@ export type Rentabilidad = {
   realPct: number | null;
 };
 
+// ── Inversionistas por obra ──────────────────────────────────
+
+export type Inversionista = {
+  id: string;
+  obra_id: string;
+  nombre: string;
+  cliente_id: string | null;
+  monto: number;
+  fecha: string;
+  pct_manual: number | null;
+  notas: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InversionistaInput = {
+  nombre: string;
+  cliente_id: string | null;
+  monto: number;
+  fecha: string;
+  pct_manual: number | null;
+  notas: string | null;
+};
+
+/** Fila del reparto: capital + su parte de la ganancia = total a recibir. */
+export type RepartoInversionista = Inversionista & {
+  /** % efectivo (manual si existe; si no, monto/total). */
+  pct: number;
+  /** Parte de la ganancia = ganancia × pct. */
+  gananciaParte: number;
+  /** Total a recibir = capital + parte de la ganancia. */
+  totalRecibir: number;
+};
+
+// ── Préstamos (por pagar / por cobrar) ───────────────────────
+
+export type PrestamoTipo = "por_pagar" | "por_cobrar";
+export type PrestamoEstado = "activo" | "saldado" | "anulado";
+export type FrecuenciaCuota = "unica" | "semanal" | "quincenal" | "mensual";
+
+export type Prestamo = {
+  id: string;
+  tipo: PrestamoTipo;
+  contraparte: string;
+  obra_id: string | null;
+  capital: number;
+  tasa: number;
+  fecha_inicio: string;
+  estado: PrestamoEstado;
+  notas: string | null;
+  created_at: string;
+  updated_at: string;
+  cuotas?: PrestamoCuota[];
+  /** Nombre de la obra ligada (si hay). */
+  obra?: { id: string; nombre: string } | null;
+};
+
+export type PrestamoCuota = {
+  id: string;
+  prestamo_id: string;
+  numero: number;
+  monto: number;
+  vence: string;
+  pagada: boolean;
+  fecha_pago: string | null;
+  created_at: string;
+};
+
+export const PRESTAMO_TIPOS: { value: PrestamoTipo; label: string }[] = [
+  { value: "por_pagar", label: "Por pagar (yo pedí)" },
+  { value: "por_cobrar", label: "Por cobrar (yo di)" },
+];
+
+export const FRECUENCIAS: { value: FrecuenciaCuota; label: string }[] = [
+  { value: "unica", label: "Pago único" },
+  { value: "semanal", label: "Semanal" },
+  { value: "quincenal", label: "Quincenal" },
+  { value: "mensual", label: "Mensual" },
+];
+
+export const PRESTAMO_ESTADO_BADGE: Record<PrestamoEstado, { badge: string; label: string }> = {
+  activo: { badge: "bg-sky-500/12 text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/25", label: "Activo" },
+  saldado: { badge: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/25", label: "Saldado" },
+  anulado: { badge: "bg-slate-500/12 text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-500/25", label: "Anulado" },
+};
+
+/** Interés simple sobre el capital: interés = capital × tasa%. */
+export function interesSimple(capital: number, tasa: number): number {
+  return round2(capital * (tasa / 100));
+}
+
+/** Total a pagar/cobrar de un préstamo = capital + interés simple. */
+export function totalPrestamo(capital: number, tasa: number): number {
+  return round2(capital + interesSimple(capital, tasa));
+}
+
 /** Enlace de WhatsApp para un teléfono dominicano (+1). Null si no hay número. */
 export function whatsappLink(telefono: string | null): string | null {
   if (!telefono) return null;

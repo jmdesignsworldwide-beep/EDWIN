@@ -30,6 +30,7 @@ import {
   HandCoins,
   HardHat,
   ExternalLink,
+  Handshake,
 } from "lucide-react";
 import { Reveal, ProgressBar, MagneticCard, CountUp, Button } from "@/components/primitives";
 import { Modal } from "@/components/ui/Modal";
@@ -41,7 +42,9 @@ import { MaterialesSection } from "./MaterialesSection";
 import { EquipoSection } from "./EquipoSection";
 import { AsistenciaTab } from "./AsistenciaTab";
 import { FinancieroTab } from "./FinancieroTab";
+import { InversionistasTab } from "./InversionistasTab";
 import type { DineroObra } from "../cobros-actions";
+import type { InversionistasData } from "../inversionistas-actions";
 import { setEstadoObra, deleteProyecto, signedArchivoUrl } from "../actions";
 import {
   clienteNombre,
@@ -61,10 +64,11 @@ type Tab =
   | "materiales"
   | "equipo"
   | "asistencia"
+  | "financiero"
+  | "inversionistas"
   | "galeria"
   | "documentos"
-  | "bitacora"
-  | "financiero";
+  | "bitacora";
 
 export function ObraWorkspace({
   proyecto,
@@ -72,6 +76,7 @@ export function ObraWorkspace({
   personal,
   clientes,
   dinero,
+  inversionistas,
   initialTab = "resumen",
 }: {
   proyecto: Proyecto;
@@ -79,6 +84,7 @@ export function ObraWorkspace({
   personal: Persona[];
   clientes: Cliente[];
   dinero: DineroObra;
+  inversionistas: InversionistasData;
   initialTab?: Tab;
 }) {
   const personalResumen = personal.map((p) => ({ id: p.id, nombre: p.nombre }));
@@ -147,6 +153,7 @@ export function ObraWorkspace({
           <TabBtn active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} soon>Documentos</TabBtn>
           <TabBtn active={tab === "bitacora"} onClick={() => setTab("bitacora")} icon={BookOpen} soon>Bitácora</TabBtn>
           <TabBtn active={tab === "financiero"} onClick={() => setTab("financiero")} icon={Wallet}>Financiero</TabBtn>
+          <TabBtn active={tab === "inversionistas"} onClick={() => setTab("inversionistas")} icon={Handshake}>Inversionistas</TabBtn>
         </div>
       </div>
 
@@ -178,6 +185,8 @@ export function ObraWorkspace({
         <ComingSoon icon={FileText} title="Documentos" description="Planos, contratos y permisos de la obra (PDF e imágenes). Llega en el próximo bloque del rediseño." />
       ) : tab === "bitacora" ? (
         <ComingSoon icon={BookOpen} title="Bitácora de obra" description="El diario de la obra: registra lo que pasa cada día, con fecha y foto opcional. Llega en el próximo bloque del rediseño." />
+      ) : tab === "inversionistas" ? (
+        <InversionistasTab obraId={proyecto.id} data={inversionistas} />
       ) : (
         <FinancieroTab obraId={proyecto.id} dinero={dinero} />
       )}
