@@ -63,6 +63,9 @@ export function ObraForm({
     anticipo_monto: proyecto?.anticipo_monto ?? null,
     anticipo_metodo: proyecto?.anticipo_metodo ?? null,
     archivo_inicial: proyecto?.archivo_inicial ?? null,
+    // Rentabilidad se edita en la pestaña Financiero; se conserva al guardar la obra.
+    costo_estimado: proyecto?.costo_estimado ?? null,
+    precio_venta: proyecto?.precio_venta ?? null,
     notas: proyecto?.notas ?? "",
   });
 

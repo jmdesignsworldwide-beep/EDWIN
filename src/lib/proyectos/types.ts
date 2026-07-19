@@ -208,6 +208,9 @@ export type Proyecto = {
   anticipo_metodo: MetodoAnticipo | null;
   /** Ruta del archivo inicial en Storage (bucket privado "obras"). */
   archivo_inicial: string | null;
+  // ── Rentabilidad ──
+  costo_estimado: number | null;
+  precio_venta: number | null;
   notas: string | null;
   etapas: Etapa[];
   /** Presente en el detalle de la obra (getProyecto / listado). */
@@ -777,6 +780,38 @@ export type FinancieroResumen = {
   estado: "sano" | "alerta" | "excedido" | "sin_presupuesto";
 };
 
+// ── Cobros (dinero que entra del cliente) ──
+export type Cobro = {
+  id: string;
+  obra_id: string;
+  monto: number;
+  concepto: string | null;
+  fecha: string;
+  metodo: MetodoAnticipo | null;
+  notas: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CobroInput = {
+  monto: number;
+  concepto: string | null;
+  fecha: string;
+  metodo: MetodoAnticipo | null;
+  notas: string | null;
+};
+
+/** Rentabilidad de una obra: proyectada (estimado) vs. real (gasto del panel). */
+export type Rentabilidad = {
+  costoEstimado: number | null;
+  precioVenta: number | null;
+  gastoReal: number;
+  proyectadaMonto: number | null;
+  proyectadaPct: number | null;
+  realMonto: number | null;
+  realPct: number | null;
+};
+
 /** Enlace de WhatsApp para un teléfono dominicano (+1). Null si no hay número. */
 export function whatsappLink(telefono: string | null): string | null {
   if (!telefono) return null;
@@ -892,6 +927,8 @@ export type ProyectoInput = {
   anticipo_monto: number | null;
   anticipo_metodo: MetodoAnticipo | null;
   archivo_inicial: string | null;
+  costo_estimado: number | null;
+  precio_venta: number | null;
   notas: string | null;
 };
 

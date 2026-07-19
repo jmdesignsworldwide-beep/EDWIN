@@ -99,6 +99,8 @@ function parseInput(raw: unknown): ProyectoInput | { error: string } {
     anticipo_monto: num(d.anticipo_monto),
     anticipo_metodo,
     archivo_inicial: str(d.archivo_inicial),
+    costo_estimado: num(d.costo_estimado),
+    precio_venta: num(d.precio_venta),
     notas: str(d.notas),
   };
 }
