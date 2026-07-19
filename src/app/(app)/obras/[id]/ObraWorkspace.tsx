@@ -41,7 +41,7 @@ import { MaterialesSection } from "./MaterialesSection";
 import { EquipoSection } from "./EquipoSection";
 import { AsistenciaTab } from "./AsistenciaTab";
 import { FinancieroTab } from "./FinancieroTab";
-import type { FinancieroData } from "../financiero-actions";
+import type { DineroObra } from "../cobros-actions";
 import { setEstadoObra, deleteProyecto, signedArchivoUrl } from "../actions";
 import {
   clienteNombre,
@@ -71,14 +71,14 @@ export function ObraWorkspace({
   proveedores,
   personal,
   clientes,
-  financiero,
+  dinero,
   initialTab = "resumen",
 }: {
   proyecto: Proyecto;
   proveedores: Proveedor[];
   personal: Persona[];
   clientes: Cliente[];
-  financiero: FinancieroData;
+  dinero: DineroObra;
   initialTab?: Tab;
 }) {
   const personalResumen = personal.map((p) => ({ id: p.id, nombre: p.nombre }));
@@ -156,7 +156,7 @@ export function ObraWorkspace({
           done={done}
           total={total}
           nEquipo={nEquipo}
-          gastado={financiero.resumen.gastado}
+          gastado={dinero.financiero.gastado}
           materialesCount={materiales.length}
           terminada={terminada}
           busy={busy}
@@ -179,7 +179,7 @@ export function ObraWorkspace({
       ) : tab === "bitacora" ? (
         <ComingSoon icon={BookOpen} title="Bitácora de obra" description="El diario de la obra: registra lo que pasa cada día, con fecha y foto opcional. Llega en el próximo bloque del rediseño." />
       ) : (
-        <FinancieroTab obraId={proyecto.id} financiero={financiero} />
+        <FinancieroTab obraId={proyecto.id} dinero={dinero} />
       )}
 
       <Modal open={editing} onClose={() => setEditing(false)} title="Editar obra" subtitle={proyecto.nombre}>

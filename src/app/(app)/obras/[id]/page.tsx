@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getProyecto } from "../actions";
-import { getFinancieroObra } from "../financiero-actions";
+import { getDineroObra } from "../cobros-actions";
 import { listClientes } from "../clientes-actions";
 import { listProveedores } from "../../proveedores/actions";
 import { listPersonal } from "../../personal/actions";
@@ -19,12 +19,12 @@ export default async function ObraDetailPage({
   params: { id: string };
   searchParams?: { vista?: string };
 }) {
-  const [proyecto, { proveedores }, { personal }, { clientes }, financiero] = await Promise.all([
+  const [proyecto, { proveedores }, { personal }, { clientes }, dinero] = await Promise.all([
     getProyecto(params.id),
     listProveedores(),
     listPersonal(),
     listClientes(),
-    getFinancieroObra(params.id),
+    getDineroObra(params.id),
   ]);
 
   if (!proyecto) {
@@ -59,7 +59,7 @@ export default async function ObraDetailPage({
       proveedores={proveedores}
       personal={personal}
       clientes={clientes}
-      financiero={financiero}
+      dinero={dinero}
       initialTab={initialTab}
     />
   );
