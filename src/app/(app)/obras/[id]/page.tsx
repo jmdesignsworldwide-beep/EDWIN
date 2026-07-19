@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { getProyecto } from "../actions";
 import { getDineroObra } from "../cobros-actions";
 import { getInversionistas } from "../inversionistas-actions";
+import { getExpedienteCounts } from "../comunicaciones-actions";
 import { listClientes } from "../clientes-actions";
 import { listProveedores } from "../../proveedores/actions";
 import { listPersonal } from "../../personal/actions";
@@ -20,13 +21,14 @@ export default async function ObraDetailPage({
   params: { id: string };
   searchParams?: { vista?: string };
 }) {
-  const [proyecto, { proveedores }, { personal }, { clientes }, dinero, inversionistas] = await Promise.all([
+  const [proyecto, { proveedores }, { personal }, { clientes }, dinero, inversionistas, counts] = await Promise.all([
     getProyecto(params.id),
     listProveedores(),
     listPersonal(),
     listClientes(),
     getDineroObra(params.id),
     getInversionistas(params.id),
+    getExpedienteCounts(params.id),
   ]);
 
   if (!proyecto) {
@@ -63,6 +65,7 @@ export default async function ObraDetailPage({
       clientes={clientes}
       dinero={dinero}
       inversionistas={inversionistas}
+      counts={counts}
       initialTab={initialTab}
     />
   );

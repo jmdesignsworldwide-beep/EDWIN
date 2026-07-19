@@ -728,7 +728,8 @@ export type CategoriaOpcion =
   | "oficio"
   | "unidad_material"
   | "tipo_obra"
-  | "gasto_categoria";
+  | "gasto_categoria"
+  | "documento_tipo";
 
 // ── Panel Financiero de Obra ─────────────────────────────────
 // El gasto real se calcula en el SERVIDOR. Estos tipos son solo formas.
@@ -907,6 +908,76 @@ export function interesSimple(capital: number, tasa: number): number {
 export function totalPrestamo(capital: number, tasa: number): number {
   return round2(capital + interesSimple(capital, tasa));
 }
+
+// ── Expediente: fotos, documentos, bitácora, comunicación ────
+
+export type FotoObra = {
+  id: string;
+  obra_id: string;
+  path: string;
+  caption: string | null;
+  etapa_id: string | null;
+  bitacora_id: string | null;
+  fecha: string;
+  created_at: string;
+  /** URL firmada temporal (la genera el servidor al listar). */
+  url?: string | null;
+};
+
+export type DocumentoObra = {
+  id: string;
+  obra_id: string;
+  path: string;
+  nombre: string;
+  tipo: string;
+  notas: string | null;
+  fecha: string;
+  created_at: string;
+  url?: string | null;
+};
+
+export type BitacoraEntrada = {
+  id: string;
+  obra_id: string;
+  texto: string;
+  fecha: string;
+  autor: string | null;
+  created_at: string;
+  updated_at: string;
+  fotos?: FotoObra[];
+};
+
+export type ComunicacionTipo = "llamada" | "whatsapp" | "reunion" | "correo" | "otro";
+
+export type ComunicacionObra = {
+  id: string;
+  obra_id: string;
+  tipo: ComunicacionTipo;
+  resumen: string;
+  notas: string | null;
+  fecha: string;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Tipos de documento sugeridos (SmartSelect; Edwin agrega los suyos). */
+export const TIPOS_DOCUMENTO = ["Plano", "Contrato", "Permiso", "Factura", "Cotización", "Otro"];
+
+export const COMUNICACION_TIPOS: { value: ComunicacionTipo; label: string }[] = [
+  { value: "llamada", label: "Llamada" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "reunion", label: "Reunión" },
+  { value: "correo", label: "Correo" },
+  { value: "otro", label: "Otro" },
+];
+
+export const COMUNICACION_TIPO_BADGE: Record<ComunicacionTipo, { badge: string; label: string }> = {
+  llamada: { badge: "bg-sky-500/12 text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/25", label: "Llamada" },
+  whatsapp: { badge: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/25", label: "WhatsApp" },
+  reunion: { badge: "bg-violet-500/12 text-violet-700 dark:text-violet-300 ring-1 ring-inset ring-violet-500/25", label: "Reunión" },
+  correo: { badge: "bg-amber-500/12 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/25", label: "Correo" },
+  otro: { badge: "bg-slate-500/12 text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-500/25", label: "Otro" },
+};
 
 /** Enlace de WhatsApp para un teléfono dominicano (+1). Null si no hay número. */
 export function whatsappLink(telefono: string | null): string | null {
