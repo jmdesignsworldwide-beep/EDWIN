@@ -15,7 +15,6 @@ import {
   FileText,
   BookOpen,
   Wallet,
-  Hammer,
   MapPin,
   User2,
   CalendarClock,
@@ -31,6 +30,7 @@ import {
   HardHat,
   ExternalLink,
   Handshake,
+  MessageSquare,
 } from "lucide-react";
 import { Reveal, ProgressBar, MagneticCard, CountUp, Button } from "@/components/primitives";
 import { Modal } from "@/components/ui/Modal";
@@ -43,6 +43,10 @@ import { EquipoSection } from "./EquipoSection";
 import { AsistenciaTab } from "./AsistenciaTab";
 import { FinancieroTab } from "./FinancieroTab";
 import { InversionistasTab } from "./InversionistasTab";
+import { GaleriaTab } from "./GaleriaTab";
+import { DocumentosTab } from "./DocumentosTab";
+import { BitacoraTab } from "./BitacoraTab";
+import { ComunicacionTab } from "./ComunicacionTab";
 import type { DineroObra } from "../cobros-actions";
 import type { InversionistasData } from "../inversionistas-actions";
 import { setEstadoObra, deleteProyecto, signedArchivoUrl } from "../actions";
@@ -68,7 +72,8 @@ type Tab =
   | "inversionistas"
   | "galeria"
   | "documentos"
-  | "bitacora";
+  | "bitacora"
+  | "comunicacion";
 
 export function ObraWorkspace({
   proyecto,
@@ -77,6 +82,7 @@ export function ObraWorkspace({
   clientes,
   dinero,
   inversionistas,
+  counts,
   initialTab = "resumen",
 }: {
   proyecto: Proyecto;
@@ -85,6 +91,7 @@ export function ObraWorkspace({
   clientes: Cliente[];
   dinero: DineroObra;
   inversionistas: InversionistasData;
+  counts: { fotos: number; documentos: number; bitacora: number; comunicaciones: number };
   initialTab?: Tab;
 }) {
   const personalResumen = personal.map((p) => ({ id: p.id, nombre: p.nombre }));
@@ -149,9 +156,10 @@ export function ObraWorkspace({
           <TabBtn active={tab === "materiales"} onClick={() => setTab("materiales")} icon={Package} badge={alertas}>Materiales</TabBtn>
           <TabBtn active={tab === "equipo"} onClick={() => setTab("equipo")} icon={Users} count={nEquipo}>Equipo</TabBtn>
           <TabBtn active={tab === "asistencia"} onClick={() => setTab("asistencia")} icon={CalendarCheck}>Asistencia</TabBtn>
-          <TabBtn active={tab === "galeria"} onClick={() => setTab("galeria")} icon={Images} soon>Galería</TabBtn>
-          <TabBtn active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} soon>Documentos</TabBtn>
-          <TabBtn active={tab === "bitacora"} onClick={() => setTab("bitacora")} icon={BookOpen} soon>Bitácora</TabBtn>
+          <TabBtn active={tab === "galeria"} onClick={() => setTab("galeria")} icon={Images} count={counts.fotos}>Galería</TabBtn>
+          <TabBtn active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} count={counts.documentos}>Documentos</TabBtn>
+          <TabBtn active={tab === "bitacora"} onClick={() => setTab("bitacora")} icon={BookOpen} count={counts.bitacora}>Bitácora</TabBtn>
+          <TabBtn active={tab === "comunicacion"} onClick={() => setTab("comunicacion")} icon={MessageSquare} count={counts.comunicaciones}>Comunicación</TabBtn>
           <TabBtn active={tab === "financiero"} onClick={() => setTab("financiero")} icon={Wallet}>Financiero</TabBtn>
           <TabBtn active={tab === "inversionistas"} onClick={() => setTab("inversionistas")} icon={Handshake}>Inversionistas</TabBtn>
         </div>
@@ -180,11 +188,13 @@ export function ObraWorkspace({
       ) : tab === "asistencia" ? (
         <AsistenciaTab obraId={proyecto.id} horaEsperada={proyecto.hora_entrada_esperada} />
       ) : tab === "galeria" ? (
-        <ComingSoon icon={Images} title="Galería de fotos" description="Sube fotos del avance de la obra desde el celular, organizadas por fecha. Llega en el próximo bloque del rediseño." />
+        <GaleriaTab obraId={proyecto.id} />
       ) : tab === "documentos" ? (
-        <ComingSoon icon={FileText} title="Documentos" description="Planos, contratos y permisos de la obra (PDF e imágenes). Llega en el próximo bloque del rediseño." />
+        <DocumentosTab obraId={proyecto.id} />
       ) : tab === "bitacora" ? (
-        <ComingSoon icon={BookOpen} title="Bitácora de obra" description="El diario de la obra: registra lo que pasa cada día, con fecha y foto opcional. Llega en el próximo bloque del rediseño." />
+        <BitacoraTab obraId={proyecto.id} />
+      ) : tab === "comunicacion" ? (
+        <ComunicacionTab obraId={proyecto.id} clienteNombre={clienteNombre(proyecto)} clienteTelefono={proyecto.cliente_rel?.telefono ?? null} />
       ) : tab === "inversionistas" ? (
         <InversionistasTab obraId={proyecto.id} data={inversionistas} />
       ) : (
@@ -412,32 +422,6 @@ function KpiCard({
         {money != null ? <CountUp value={money} duration={0.8} format={formatCurrency} /> : value}
       </p>
     </div>
-  );
-}
-
-function ComingSoon({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: typeof Wallet;
-  title: string;
-  description: string;
-}) {
-  return (
-    <Reveal standalone>
-      <div className="glass flex flex-col items-center justify-center rounded-2xl px-6 py-16 text-center shadow-card">
-        <div className="grid h-14 w-14 place-items-center rounded-2xl bg-brand/12 text-brand ring-1 ring-brand/25">
-          <Icon className="h-7 w-7" strokeWidth={1.8} />
-        </div>
-        <h2 className="mt-4 text-lg font-semibold text-content">{title}</h2>
-        <p className="mt-1.5 max-w-md text-sm text-content-muted">{description}</p>
-        <span className="mt-5 inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1.5 text-xs font-medium text-content-subtle">
-          <Hammer className="h-3.5 w-3.5" />
-          Próximamente
-        </span>
-      </div>
-    </Reveal>
   );
 }
 

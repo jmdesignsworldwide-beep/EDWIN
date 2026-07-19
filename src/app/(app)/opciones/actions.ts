@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import type { CategoriaOpcion } from "@/lib/proyectos/types";
 
-const CATEGORIAS: CategoriaOpcion[] = ["proveedor_categoria", "oficio", "unidad_material", "tipo_obra", "gasto_categoria"];
+const CATEGORIAS: CategoriaOpcion[] = ["proveedor_categoria", "oficio", "unidad_material", "tipo_obra", "gasto_categoria", "documento_tipo"];
 
 /** Opciones guardadas por Edwin para una categoría de selector inteligente. */
 export async function listOpciones(categoria: CategoriaOpcion): Promise<string[]> {
