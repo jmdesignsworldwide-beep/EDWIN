@@ -724,7 +724,58 @@ export type CategoriaOpcion =
   | "proveedor_categoria"
   | "oficio"
   | "unidad_material"
-  | "tipo_obra";
+  | "tipo_obra"
+  | "gasto_categoria";
+
+// ── Panel Financiero de Obra ─────────────────────────────────
+// El gasto real se calcula en el SERVIDOR. Estos tipos son solo formas.
+
+export type GastoObra = {
+  id: string;
+  obra_id: string;
+  categoria: string;
+  concepto: string | null;
+  monto: number;
+  fecha: string;
+  notas: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type GastoInput = {
+  categoria: string;
+  concepto: string | null;
+  monto: number;
+  fecha: string;
+  notas: string | null;
+};
+
+/** Categorías sugeridas de gastos manuales de obra (RD). */
+export const CATEGORIAS_GASTO = [
+  "Combustible",
+  "Transporte",
+  "Alquiler de equipo",
+  "Permisos",
+  "Alimentación",
+  "Herramientas",
+  "Imprevistos",
+  "Otros",
+];
+
+/** Desglose del gasto real de una obra (calculado en el servidor). */
+export type FinancieroResumen = {
+  presupuesto: number | null;
+  materiales: number;
+  manoObra: number;
+  compras: number;
+  gastosManuales: number;
+  gastado: number;
+  restante: number | null;
+  /** Porcentaje ejecutado (gastado/presupuesto) o null si no hay presupuesto. */
+  ejecutado: number | null;
+  /** Semáforo: 'sano' | 'alerta' | 'excedido' | 'sin_presupuesto'. */
+  estado: "sano" | "alerta" | "excedido" | "sin_presupuesto";
+};
 
 /** Enlace de WhatsApp para un teléfono dominicano (+1). Null si no hay número. */
 export function whatsappLink(telefono: string | null): string | null {

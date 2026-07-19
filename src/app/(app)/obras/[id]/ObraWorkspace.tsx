@@ -40,12 +40,13 @@ import { EtapasSection } from "./EtapasSection";
 import { MaterialesSection } from "./MaterialesSection";
 import { EquipoSection } from "./EquipoSection";
 import { AsistenciaTab } from "./AsistenciaTab";
+import { FinancieroTab } from "./FinancieroTab";
+import type { FinancieroData } from "../financiero-actions";
 import { setEstadoObra, deleteProyecto, signedArchivoUrl } from "../actions";
 import {
   clienteNombre,
   etapasCompletadas,
   materialesEnAlerta,
-  totalMateriales,
   METODO_ANTICIPO_LABEL,
   type Cliente,
   type Persona,
@@ -70,12 +71,14 @@ export function ObraWorkspace({
   proveedores,
   personal,
   clientes,
+  financiero,
   initialTab = "resumen",
 }: {
   proyecto: Proyecto;
   proveedores: Proveedor[];
   personal: Persona[];
   clientes: Cliente[];
+  financiero: FinancieroData;
   initialTab?: Tab;
 }) {
   const personalResumen = personal.map((p) => ({ id: p.id, nombre: p.nombre }));
@@ -143,7 +146,7 @@ export function ObraWorkspace({
           <TabBtn active={tab === "galeria"} onClick={() => setTab("galeria")} icon={Images} soon>Galería</TabBtn>
           <TabBtn active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} soon>Documentos</TabBtn>
           <TabBtn active={tab === "bitacora"} onClick={() => setTab("bitacora")} icon={BookOpen} soon>Bitácora</TabBtn>
-          <TabBtn active={tab === "financiero"} onClick={() => setTab("financiero")} icon={Wallet} soon>Financiero</TabBtn>
+          <TabBtn active={tab === "financiero"} onClick={() => setTab("financiero")} icon={Wallet}>Financiero</TabBtn>
         </div>
       </div>
 
@@ -153,7 +156,7 @@ export function ObraWorkspace({
           done={done}
           total={total}
           nEquipo={nEquipo}
-          materialesTotal={totalMateriales(materiales)}
+          gastado={financiero.resumen.gastado}
           materialesCount={materiales.length}
           terminada={terminada}
           busy={busy}
@@ -176,7 +179,7 @@ export function ObraWorkspace({
       ) : tab === "bitacora" ? (
         <ComingSoon icon={BookOpen} title="Bitácora de obra" description="El diario de la obra: registra lo que pasa cada día, con fecha y foto opcional. Llega en el próximo bloque del rediseño." />
       ) : (
-        <ComingSoon icon={Wallet} title="Panel financiero" description="Presupuesto vs. gasto real (materiales, nómina y gastos sueltos) con restante en vivo. Llega en el próximo bloque del rediseño." />
+        <FinancieroTab obraId={proyecto.id} financiero={financiero} />
       )}
 
       <Modal open={editing} onClose={() => setEditing(false)} title="Editar obra" subtitle={proyecto.nombre}>
@@ -206,7 +209,7 @@ function ObraResumen({
   done,
   total,
   nEquipo,
-  materialesTotal,
+  gastado,
   materialesCount,
   terminada,
   busy,
@@ -218,7 +221,7 @@ function ObraResumen({
   done: number;
   total: number;
   nEquipo: number;
-  materialesTotal: number;
+  gastado: number;
   materialesCount: number;
   terminada: boolean;
   busy: boolean;
@@ -247,11 +250,7 @@ function ObraResumen({
         <KpiCard icon={GanttChartSquare} label="Etapas" value={`${done}/${total}`} />
         <KpiCard icon={Users} label="Equipo" value={String(nEquipo)} />
         <KpiCard icon={Package} label="Materiales" value={String(materialesCount)} />
-        <KpiCard
-          icon={Wallet}
-          label="En materiales"
-          money={materialesTotal}
-        />
+        <KpiCard icon={Wallet} label="Gastado" money={gastado} />
       </div>
 
       {/* Datos generales */}
