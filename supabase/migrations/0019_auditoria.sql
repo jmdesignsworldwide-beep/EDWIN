@@ -32,7 +32,10 @@ create index if not exists auditoria_accion_idx on public.auditoria (accion);
 
 -- ── Inmutabilidad: bloquear UPDATE y DELETE para TODOS los roles ──
 create or replace function public.auditoria_inmutable()
-returns trigger language plpgsql as $$
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
 begin
   raise exception 'La auditoría es inviolable: no se puede % un registro.', tg_op;
 end;
