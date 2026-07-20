@@ -6,6 +6,7 @@ import {
   createAdminClient,
   isSupabaseConfigured,
 } from "@/lib/supabase/server";
+import { registrarAuditoria } from "@/lib/auditoria";
 import {
   calcularAvance,
   type EstadoObra,
@@ -183,10 +184,13 @@ export async function createProyecto(raw: unknown): Promise<MutationResult> {
 
   try {
     const supabase = createAdminClient();
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("proyectos")
-      .insert({ ...parsed, avance: 0 });
+      .insert({ ...parsed, avance: 0 })
+      .select("id")
+      .single();
     if (error) throw error;
+    await registrarAuditoria("crear", "obra", (data as { id: string } | null)?.id ?? null, `Obra: ${parsed.nombre}`);
     revalidatePath("/obras");
     revalidatePath("/dashboard");
     return { ok: true };
@@ -212,6 +216,7 @@ export async function updateProyecto(
     const supabase = createAdminClient();
     const { error } = await supabase.from("proyectos").update(parsed).eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("editar", "obra", id, `Obra: ${parsed.nombre}`);
     revalidatePath("/obras");
     revalidatePath(`/obras/${id}`);
     revalidatePath("/dashboard");
@@ -235,8 +240,10 @@ export async function setEstadoObra(
   if (!ESTADOS_VALIDOS.includes(estado)) return { ok: false, error: "Estado inválido." };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("proyectos").select("nombre, estado").eq("id", id).single();
     const { error } = await supabase.from("proyectos").update({ estado }).eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("editar", "obra", id, `Obra: ${(prev as any)?.nombre ?? id}`, { campo: "estado", antes: (prev as any)?.estado, despues: estado });
     revalidatePath("/obras");
     revalidatePath(`/obras/${id}`);
     revalidatePath("/dashboard");
@@ -301,8 +308,10 @@ export async function deleteProyecto(id: string): Promise<MutationResult> {
 
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("proyectos").select("nombre").eq("id", id).single();
     const { error } = await supabase.from("proyectos").delete().eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("eliminar", "obra", id, `Obra: ${(prev as any)?.nombre ?? id}`);
     revalidatePath("/obras");
     revalidatePath("/dashboard");
     return { ok: true };

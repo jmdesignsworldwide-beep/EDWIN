@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { registrarAuditoria } from "@/lib/auditoria";
+import { formatMoney } from "@/lib/utils";
 import {
   round2,
   totalPrestamo,
@@ -174,6 +176,7 @@ export async function addPrestamo(raw: unknown): Promise<{ ok: boolean; error?: 
       await supabase.from("prestamos").delete().eq("id", prestamoId);
       throw eCuotas;
     }
+    await registrarAuditoria("crear", "prestamo", prestamoId, `Préstamo ${tipo === "por_pagar" ? "por pagar" : "por cobrar"}: ${contraparte} · ${formatMoney(total)}`, { campo: "capital", despues: round2(capital) });
     revalidatePath("/prestamos");
     return { ok: true, id: prestamoId };
   } catch {
@@ -220,6 +223,7 @@ export async function marcarCuota(cuotaId: string, prestamoId: string, pagada: b
     const { data: rest } = await supabase.from("prestamo_cuotas").select("pagada").eq("prestamo_id", prestamoId);
     const todas = (rest ?? []).length > 0 && (rest ?? []).every((c: { pagada: boolean }) => c.pagada);
     await supabase.from("prestamos").update({ estado: todas ? "saldado" : "activo" }).eq("id", prestamoId).neq("estado", "anulado");
+    await registrarAuditoria("editar", "prestamo", prestamoId, `Cuota ${pagada ? "marcada pagada" : "reabierta"}`, { campo: "cuota_pagada", despues: pagada });
     revalidatePath("/prestamos");
     revalidatePath(`/prestamos/${prestamoId}`);
     return { ok: true };
@@ -234,8 +238,10 @@ export async function anularPrestamo(id: string): Promise<{ ok: boolean; error?:
   if (!id) return { ok: false, error: "Falta el identificador." };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("prestamos").select("contraparte").eq("id", id).single();
     const { error } = await supabase.from("prestamos").update({ estado: "anulado" }).eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("anular", "prestamo", id, `Préstamo anulado: ${(prev as any)?.contraparte ?? id}`, { campo: "estado", despues: "anulado" });
     revalidatePath("/prestamos");
     revalidatePath(`/prestamos/${id}`);
     return { ok: true };
@@ -250,8 +256,10 @@ export async function deletePrestamo(id: string): Promise<{ ok: boolean; error?:
   if (!id) return { ok: false, error: "Falta el identificador." };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("prestamos").select("contraparte, capital").eq("id", id).single();
     const { error } = await supabase.from("prestamos").delete().eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("eliminar", "prestamo", id, `Préstamo: ${(prev as any)?.contraparte ?? id}`, { campo: "capital", antes: (prev as any)?.capital });
     revalidatePath("/prestamos");
     return { ok: true };
   } catch {

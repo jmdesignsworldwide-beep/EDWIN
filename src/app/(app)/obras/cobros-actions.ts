@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { getFinancieroObra, type FinancieroData } from "./financiero-actions";
+import { registrarAuditoria } from "@/lib/auditoria";
+import { formatMoney } from "@/lib/utils";
 import {
   round2,
   type Cobro,
@@ -128,6 +130,7 @@ export async function addCobro(obraId: string, raw: unknown): Promise<{ ok: bool
     const supabase = createAdminClient();
     const { error } = await supabase.from("cobros_obra").insert({ obra_id: obraId, ...parsed });
     if (error) throw error;
+    await registrarAuditoria("crear", "cobro", obraId, `Cobro · ${formatMoney(parsed.monto)}`, { campo: "monto", despues: parsed.monto });
     revalidatePath(`/obras/${obraId}`);
     return { ok: true };
   } catch {
@@ -143,8 +146,10 @@ export async function updateCobro(id: string, obraId: string, raw: unknown): Pro
   if ("error" in parsed) return { ok: false, error: parsed.error };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("cobros_obra").select("monto").eq("id", id).single();
     const { error } = await supabase.from("cobros_obra").update(parsed).eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("editar", "cobro", obraId, `Cobro · ${formatMoney(parsed.monto)}`, { campo: "monto", antes: (prev as any)?.monto, despues: parsed.monto });
     revalidatePath(`/obras/${obraId}`);
     return { ok: true };
   } catch {
@@ -158,8 +163,10 @@ export async function deleteCobro(id: string, obraId: string): Promise<{ ok: boo
   if (!id) return { ok: false, error: "Falta el identificador." };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("cobros_obra").select("monto").eq("id", id).single();
     const { error } = await supabase.from("cobros_obra").delete().eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("eliminar", "cobro", obraId, `Cobro · ${formatMoney((prev as any)?.monto ?? 0)}`, { campo: "monto", antes: (prev as any)?.monto });
     revalidatePath(`/obras/${obraId}`);
     return { ok: true };
   } catch {
@@ -183,11 +190,20 @@ export async function setRentabilidad(
   };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("proyectos").select("costo_estimado, precio_venta, nombre").eq("id", obraId).single();
+    const costo = num(d.costo_estimado);
+    const precio = num(d.precio_venta);
     const { error } = await supabase
       .from("proyectos")
-      .update({ costo_estimado: num(d.costo_estimado), precio_venta: num(d.precio_venta) })
+      .update({ costo_estimado: costo, precio_venta: precio })
       .eq("id", obraId);
     if (error) throw error;
+    await registrarAuditoria("editar", "rentabilidad", obraId, `Rentabilidad · ${(prev as any)?.nombre ?? "obra"}`, {
+      campo: "precio_venta",
+      antes: (prev as any)?.precio_venta,
+      despues: precio,
+      nota: `Costo estimado: ${(prev as any)?.costo_estimado ?? "—"} → ${costo ?? "—"}`,
+    });
     revalidatePath(`/obras/${obraId}`);
     return { ok: true };
   } catch {

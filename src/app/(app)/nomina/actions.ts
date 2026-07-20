@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser, requireAdmin } from "@/lib/auth";
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { registrarAuditoria } from "@/lib/auditoria";
 import {
   jornalDiario,
   round2,
@@ -253,6 +254,7 @@ export async function guardarNomina(
       throw eLin;
     }
 
+    await registrarAuditoria("crear", "nomina", nominaId, `Nómina ${desde} a ${hasta} · ${formatMoney(total)}`, { campo: "total", despues: total, nota: `${lineas.length} personas` });
     revalidatePath("/nomina");
     return { ok: true, id: nominaId };
   } catch {
@@ -321,6 +323,7 @@ export async function marcarPagada(
       .eq("id", id)
       .eq("estado", "pendiente");
     if (error) throw error;
+    await registrarAuditoria("editar", "nomina", id, `Nómina marcada pagada`, { campo: "estado", despues: "pagada", nota: `Método: ${metodo} · ${fecha}` });
     revalidatePath("/nomina");
     revalidatePath(`/nomina/${id}`);
     return { ok: true };
@@ -341,6 +344,7 @@ export async function anularNomina(id: string): Promise<{ ok: boolean; error?: s
       .update({ estado: "anulada", fecha_pago: null, metodo_pago: null })
       .eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("anular", "nomina", id, `Nómina anulada`, { campo: "estado", despues: "anulada" });
     revalidatePath("/nomina");
     revalidatePath(`/nomina/${id}`);
     return { ok: true };
@@ -356,8 +360,10 @@ export async function deleteNomina(id: string): Promise<{ ok: boolean; error?: s
   if (!id) return { ok: false, error: "Falta el identificador." };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("nominas").select("desde, hasta, total").eq("id", id).single();
     const { error } = await supabase.from("nominas").delete().eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("eliminar", "nomina", id, `Nómina ${(prev as any)?.desde ?? ""} a ${(prev as any)?.hasta ?? ""}`, { campo: "total", antes: (prev as any)?.total });
     revalidatePath("/nomina");
     return { ok: true };
   } catch {

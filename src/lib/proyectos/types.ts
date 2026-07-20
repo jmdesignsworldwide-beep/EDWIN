@@ -1035,6 +1035,50 @@ export const SEVERIDAD_UI: Record<Severidad, { color: string; bg: string; dot: s
   info: { color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-500/10", dot: "bg-sky-500" },
 };
 
+// ── Auditoría / historial de actividad ───────────────────────
+
+export type AccionAuditoria = "crear" | "editar" | "eliminar" | "anular";
+
+export type RegistroAuditoria = {
+  id: string;
+  usuario_id: string | null;
+  usuario_nombre: string;
+  accion: AccionAuditoria;
+  entidad_tipo: string;
+  entidad_id: string | null;
+  entidad_label: string;
+  detalle: { campo?: string; antes?: unknown; despues?: unknown; nota?: string } | null;
+  created_at: string;
+};
+
+export const ACCIONES_AUDITORIA: { value: AccionAuditoria; label: string }[] = [
+  { value: "crear", label: "Creó" },
+  { value: "editar", label: "Editó" },
+  { value: "eliminar", label: "Eliminó" },
+  { value: "anular", label: "Anuló" },
+];
+
+export const ACCION_AUDITORIA_UI: Record<AccionAuditoria, { label: string; badge: string; dot: string }> = {
+  crear: { label: "Creó", badge: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/25", dot: "bg-emerald-500" },
+  editar: { label: "Editó", badge: "bg-sky-500/12 text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/25", dot: "bg-sky-500" },
+  eliminar: { label: "Eliminó", badge: "bg-rose-500/12 text-rose-700 dark:text-rose-300 ring-1 ring-inset ring-rose-500/25", dot: "bg-rose-500" },
+  anular: { label: "Anuló", badge: "bg-amber-500/12 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/25", dot: "bg-amber-500" },
+};
+
+/** Etiquetas legibles por tipo de entidad (para filtros y textos). */
+export const ENTIDAD_LABEL: Record<string, string> = {
+  obra: "Obra",
+  cliente: "Cliente",
+  cobro: "Cobro",
+  gasto: "Gasto",
+  nomina: "Nómina",
+  prestamo: "Préstamo",
+  inversionista: "Inversionista",
+  pago_empleado: "Pago a empleado",
+  rentabilidad: "Rentabilidad",
+  personal: "Personal",
+};
+
 /** Enlace de WhatsApp para un teléfono dominicano (+1). Null si no hay número. */
 export function whatsappLink(telefono: string | null): string | null {
   if (!telefono) return null;

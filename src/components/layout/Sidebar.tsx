@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { LogOut, X, UserCog } from "lucide-react";
+import { LogOut, X, UserCog, History } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { NAV_GROUPS, type NavGroup } from "@/lib/navigation";
 import { Logo } from "./Logo";
@@ -11,7 +11,10 @@ import { cn } from "@/lib/utils";
 
 const ADMIN_GROUP: NavGroup = {
   title: "Administración",
-  items: [{ label: "Usuarios", href: "/usuarios", icon: UserCog }],
+  items: [
+    { label: "Usuarios", href: "/usuarios", icon: UserCog },
+    { label: "Actividad", href: "/actividad", icon: History },
+  ],
 };
 
 /**
