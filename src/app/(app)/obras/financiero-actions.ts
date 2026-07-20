@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { registrarAuditoria } from "@/lib/auditoria";
+import { formatMoney } from "@/lib/utils";
 import {
   jornalDiario,
   round2,
@@ -134,6 +136,7 @@ export async function addGasto(obraId: string, raw: unknown): Promise<{ ok: bool
     const supabase = createAdminClient();
     const { error } = await supabase.from("gastos_obra").insert({ obra_id: obraId, ...parsed });
     if (error) throw error;
+    await registrarAuditoria("crear", "gasto", obraId, `Gasto ${parsed.categoria} · ${formatMoney(parsed.monto)}`, { campo: "monto", despues: parsed.monto });
     revalidatePath(`/obras/${obraId}`);
     return { ok: true };
   } catch {
@@ -149,8 +152,10 @@ export async function updateGasto(id: string, obraId: string, raw: unknown): Pro
   if ("error" in parsed) return { ok: false, error: parsed.error };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("gastos_obra").select("monto").eq("id", id).single();
     const { error } = await supabase.from("gastos_obra").update(parsed).eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("editar", "gasto", obraId, `Gasto ${parsed.categoria} · ${formatMoney(parsed.monto)}`, { campo: "monto", antes: (prev as any)?.monto, despues: parsed.monto });
     revalidatePath(`/obras/${obraId}`);
     return { ok: true };
   } catch {
@@ -164,8 +169,10 @@ export async function deleteGasto(id: string, obraId: string): Promise<{ ok: boo
   if (!id) return { ok: false, error: "Falta el identificador." };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("gastos_obra").select("monto, categoria").eq("id", id).single();
     const { error } = await supabase.from("gastos_obra").delete().eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("eliminar", "gasto", obraId, `Gasto ${(prev as any)?.categoria ?? ""} · ${formatMoney((prev as any)?.monto ?? 0)}`, { campo: "monto", antes: (prev as any)?.monto });
     revalidatePath(`/obras/${obraId}`);
     return { ok: true };
   } catch {

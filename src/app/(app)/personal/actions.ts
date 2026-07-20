@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { registrarAuditoria } from "@/lib/auditoria";
 import {
   normalizarCedulaRnc,
   type JornalTipo,
@@ -109,6 +110,7 @@ export async function createPersona(raw: unknown): Promise<PersonaMutationResult
     const supabase = createAdminClient();
     const { data, error } = await supabase.from("personal").insert(parsed).select("*").single();
     if (error) throw error;
+    await registrarAuditoria("crear", "personal", (data as Persona)?.id ?? null, `Personal: ${parsed.nombre}`);
     revalidatePath("/personal");
     return { ok: true, persona: { ...(data as Persona), obras: [] } };
   } catch {
@@ -126,6 +128,7 @@ export async function updatePersona(id: string, raw: unknown): Promise<PersonaMu
     const supabase = createAdminClient();
     const { data, error } = await supabase.from("personal").update(parsed).eq("id", id).select("*").single();
     if (error) throw error;
+    await registrarAuditoria("editar", "personal", id, `Personal: ${parsed.nombre}`);
     revalidatePath("/personal");
     revalidatePath("/obras");
     return { ok: true, persona: { ...(data as Persona), obras: [] } };
@@ -140,8 +143,10 @@ export async function deletePersona(id: string): Promise<{ ok: boolean; error?: 
   if (!id) return { ok: false, error: "Falta el identificador." };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("personal").select("nombre").eq("id", id).single();
     const { error } = await supabase.from("personal").delete().eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("eliminar", "personal", id, `Personal: ${(prev as any)?.nombre ?? id}`);
     revalidatePath("/personal");
     revalidatePath("/obras");
     return { ok: true };

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { registrarAuditoria } from "@/lib/auditoria";
+import { formatMoney } from "@/lib/utils";
 import { round2, type PagoEmpleado, type PagoTipo } from "@/lib/proyectos/types";
 
 const TIPOS: PagoTipo[] = ["adelanto", "pago", "entrega", "otro"];
@@ -62,6 +64,8 @@ export async function addPago(
       notas: str(d.notas),
     });
     if (error) throw error;
+    const { data: per } = await supabase.from("personal").select("nombre").eq("id", personaId).single();
+    await registrarAuditoria("crear", "pago_empleado", personaId, `${tipo} a ${(per as any)?.nombre ?? "empleado"} · ${formatMoney(round2(monto))}`, { campo: "monto", despues: round2(monto) });
     revalidatePath(`/personal/${personaId}`);
     return { ok: true };
   } catch {
@@ -99,12 +103,14 @@ export async function deletePago(
   if (!id) return { ok: false, error: "Falta el identificador." };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("pagos_empleado").select("monto, tipo").eq("id", id).single();
     const { error } = await supabase
       .from("pagos_empleado")
       .delete()
       .eq("id", id)
       .eq("origen", "manual");
     if (error) throw error;
+    await registrarAuditoria("eliminar", "pago_empleado", personaId, `Entrega ${(prev as any)?.tipo ?? ""} · ${formatMoney((prev as any)?.monto ?? 0)}`, { campo: "monto", antes: (prev as any)?.monto });
     revalidatePath(`/personal/${personaId}`);
     return { ok: true };
   } catch {

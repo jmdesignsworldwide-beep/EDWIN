@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { registrarAuditoria } from "@/lib/auditoria";
 import {
   clienteCompleto,
   normalizarDocumento,
@@ -93,6 +94,7 @@ export async function createCliente(raw: unknown): Promise<ClienteMutationResult
     const supabase = createAdminClient();
     const { data, error } = await supabase.from("clientes").insert(parsed).select("*").single();
     if (error) throw error;
+    await registrarAuditoria("crear", "cliente", (data as Cliente)?.id ?? null, `Cliente: ${parsed.nombre}`);
     revalidatePath("/clientes");
     revalidatePath("/obras");
     return { ok: true, cliente: data as Cliente };
@@ -111,6 +113,7 @@ export async function updateCliente(id: string, raw: unknown): Promise<ClienteMu
     const supabase = createAdminClient();
     const { data, error } = await supabase.from("clientes").update(parsed).eq("id", id).select("*").single();
     if (error) throw error;
+    await registrarAuditoria("editar", "cliente", id, `Cliente: ${parsed.nombre}`);
     revalidatePath("/clientes");
     revalidatePath("/obras");
     return { ok: true, cliente: data as Cliente };
@@ -133,8 +136,10 @@ export async function deleteCliente(id: string): Promise<{ ok: boolean; error?: 
     if ((count ?? 0) > 0) {
       return { ok: false, error: "Este cliente tiene obras asignadas. Reasígnalas antes de eliminarlo." };
     }
+    const { data: prev } = await supabase.from("clientes").select("nombre").eq("id", id).single();
     const { error } = await supabase.from("clientes").delete().eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("eliminar", "cliente", id, `Cliente: ${(prev as any)?.nombre ?? id}`);
     revalidatePath("/clientes");
     revalidatePath("/obras");
     return { ok: true };

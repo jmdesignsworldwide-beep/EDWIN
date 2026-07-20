@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { getDineroObra } from "./cobros-actions";
+import { registrarAuditoria } from "@/lib/auditoria";
+import { formatMoney } from "@/lib/utils";
 import {
   round2,
   type Inversionista,
@@ -90,6 +92,7 @@ export async function addInversionista(obraId: string, raw: unknown): Promise<{ 
     const supabase = createAdminClient();
     const { error } = await supabase.from("inversionistas").insert({ obra_id: obraId, ...parsed });
     if (error) throw error;
+    await registrarAuditoria("crear", "inversionista", obraId, `Inversionista: ${parsed.nombre} · ${formatMoney(parsed.monto)}`, { campo: "monto", despues: parsed.monto });
     revalidatePath(`/obras/${obraId}`);
     return { ok: true };
   } catch {
@@ -105,8 +108,10 @@ export async function updateInversionista(id: string, obraId: string, raw: unkno
   if ("error" in parsed) return { ok: false, error: parsed.error };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("inversionistas").select("monto").eq("id", id).single();
     const { error } = await supabase.from("inversionistas").update(parsed).eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("editar", "inversionista", obraId, `Inversionista: ${parsed.nombre} · ${formatMoney(parsed.monto)}`, { campo: "monto", antes: (prev as any)?.monto, despues: parsed.monto });
     revalidatePath(`/obras/${obraId}`);
     return { ok: true };
   } catch {
@@ -120,8 +125,10 @@ export async function deleteInversionista(id: string, obraId: string): Promise<{
   if (!id) return { ok: false, error: "Falta el identificador." };
   try {
     const supabase = createAdminClient();
+    const { data: prev } = await supabase.from("inversionistas").select("nombre, monto").eq("id", id).single();
     const { error } = await supabase.from("inversionistas").delete().eq("id", id);
     if (error) throw error;
+    await registrarAuditoria("eliminar", "inversionista", obraId, `Inversionista: ${(prev as any)?.nombre ?? id}`, { campo: "monto", antes: (prev as any)?.monto });
     revalidatePath(`/obras/${obraId}`);
     return { ok: true };
   } catch {
