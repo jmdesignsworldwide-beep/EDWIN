@@ -1,9 +1,10 @@
 "use client";
 
-import { Bell, Menu, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { LiveBackupIndicator } from "./LiveBackupIndicator";
+import { NotificationBell } from "./NotificationBell";
 import type { ShellUser } from "./Shell";
 
 function initials(nombre: string): string {
@@ -43,14 +44,7 @@ export function Header({ onMenu, user }: { onMenu: () => void; user: ShellUser }
         <LiveBackupIndicator className="hidden xs:inline-flex" />
 
         {/* Notifications */}
-        <Link
-          href="/notificaciones"
-          className="relative grid h-9 w-9 place-items-center rounded-full border border-line bg-surface/70 text-content-muted transition-colors hover:border-brand/40 hover:text-brand"
-          aria-label="Notificaciones"
-        >
-          <Bell className="h-[18px] w-[18px]" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-danger ring-2 ring-bg" />
-        </Link>
+        <NotificationBell />
 
         <ThemeToggle />
 
