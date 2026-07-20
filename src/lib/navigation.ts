@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Camera,
   Bell,
+  ListChecks,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -79,7 +80,8 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Avances", href: "/avances", icon: Camera },
       { label: "Reportes", href: "/reportes", icon: BarChart3 },
-      { label: "Notificaciones", href: "/notificaciones", icon: Bell, badge: 5 },
+      { label: "Pendientes", href: "/pendientes", icon: ListChecks },
+      { label: "Notificaciones", href: "/notificaciones", icon: Bell },
     ],
   },
   {

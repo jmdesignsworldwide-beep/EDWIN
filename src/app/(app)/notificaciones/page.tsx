@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
-import { Bell } from "lucide-react";
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
+import { getNotificaciones } from "./actions";
+import { NotificacionesView } from "./NotificacionesView";
 
 export const metadata: Metadata = { title: "Notificaciones" };
 
-export default function NotificacionesPage() {
-  return (
-    <PlaceholderPage
-      title="Notificaciones"
-      subtitle="Centro de notificaciones"
-      icon={Bell}
-    />
-  );
+export const dynamic = "force-dynamic";
+
+export default async function NotificacionesPage() {
+  const { items } = await getNotificaciones();
+  return <NotificacionesView items={items} />;
 }

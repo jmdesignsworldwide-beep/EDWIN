@@ -979,6 +979,62 @@ export const COMUNICACION_TIPO_BADGE: Record<ComunicacionTipo, { badge: string; 
   otro: { badge: "bg-slate-500/12 text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-500/25", label: "Otro" },
 };
 
+// ── Notificaciones (derivadas) + Pendientes ──────────────────
+
+export type NotificacionTipo = "prestamo" | "presupuesto" | "material" | "cliente" | "cobro";
+export type Severidad = "danger" | "warn" | "info";
+
+/** Notificación derivada de una fuente existente (no se guarda; el estado sí). */
+export type Notificacion = {
+  clave: string;
+  tipo: NotificacionTipo;
+  severidad: Severidad;
+  titulo: string;
+  detalle: string;
+  href: string;
+  /** ISO de referencia (para orden). */
+  ts: string | null;
+  leida: boolean;
+};
+
+export type PrioridadPendiente = "alta" | "normal";
+
+export type Pendiente = {
+  id: string;
+  texto: string;
+  obra_id: string | null;
+  prioridad: PrioridadPendiente;
+  fecha: string | null;
+  hecho: boolean;
+  hecho_at: string | null;
+  autor: string | null;
+  created_at: string;
+  updated_at: string;
+  /** Nombre de la obra ligada (embebido). */
+  obra?: { id: string; nombre: string } | null;
+};
+
+export type PendienteInput = {
+  texto: string;
+  obra_id: string | null;
+  prioridad: PrioridadPendiente;
+  fecha: string | null;
+};
+
+export const NOTIF_TIPO_ICON_LABEL: Record<NotificacionTipo, string> = {
+  prestamo: "Préstamo",
+  presupuesto: "Presupuesto",
+  material: "Materiales",
+  cliente: "Cliente",
+  cobro: "Cobro",
+};
+
+export const SEVERIDAD_UI: Record<Severidad, { color: string; bg: string; dot: string }> = {
+  danger: { color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-500/10", dot: "bg-rose-500" },
+  warn: { color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10", dot: "bg-amber-500" },
+  info: { color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-500/10", dot: "bg-sky-500" },
+};
+
 /** Enlace de WhatsApp para un teléfono dominicano (+1). Null si no hay número. */
 export function whatsappLink(telefono: string | null): string | null {
   if (!telefono) return null;
